@@ -1,0 +1,23 @@
+{
+  "inventory_demand": {
+    "mae": 5.9482,
+    "rmse": 7.3956
+  },
+  "inventory_stockout": {
+    "accuracy": 0.963,
+    "roc_auc": 0.9828
+  },
+  "delivery_eta": {
+    "mae": 3.267,
+    "rmse": 3.7885
+  },
+  "delivery_delay": {
+    "accuracy": 0.9192,
+    "roc_auc": 0.9767
+  },
+  "data_notes": {
+    "stockout_flag_source": "Stockout_Flag was constant at 0; a derived historical risk label was used instead.",
+    "stockout_risk_rule": "Inventory_Level < Units_Sold \u00d7 Supplier_Lead_Time_Days \u00d7 1.15",
+    "stockout_risk_positive_rows": 6499
+  }
+}

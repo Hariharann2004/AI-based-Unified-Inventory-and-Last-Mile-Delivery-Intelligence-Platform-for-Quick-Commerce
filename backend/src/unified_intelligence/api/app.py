@@ -14,9 +14,9 @@ from unified_intelligence.api.schemas.decisions import UnifiedDecisionRequest
 from unified_intelligence.api.schemas.delivery import DeliveryPredictionRequest
 from unified_intelligence.api.schemas.inventory import InventoryPredictionRequest
 from unified_intelligence.core.config import get_settings
-from unified_intelligence.delivery.service import DeliveryService
-from unified_intelligence.inventory.service import InventoryService
-from unified_intelligence.decision_engine.service import create_unified_recommendation
+from unified_intelligence.application.decision_service import DecisionService
+from unified_intelligence.application.delivery_service import DeliveryService
+from unified_intelligence.application.inventory_service import InventoryService
 
 settings = get_settings()
 app = Flask(__name__)
@@ -86,14 +86,8 @@ def delivery_predict():
 def unified_decision():
     try:
         payload = body(UnifiedDecisionRequest)
-        inventory = inventory_service().predict(payload["inventory"])
-        delivery_record = payload.get("delivery")
-        delivery = delivery_service().predict(delivery_record) if delivery_record else None
-        return jsonify({
-            "inventory": inventory,
-            "delivery": delivery,
-            "decision": create_unified_recommendation(inventory, delivery),
-        })
+        service = DecisionService(inventory_service(), delivery_service())
+        return jsonify(service.evaluate(payload["inventory"], payload.get("delivery")))
     except ValidationError:
         raise
     except (ValueError, KeyError) as error:

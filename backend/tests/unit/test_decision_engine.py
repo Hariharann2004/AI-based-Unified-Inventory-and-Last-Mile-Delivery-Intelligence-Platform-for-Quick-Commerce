@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from unified_intelligence.decision_engine.service import create_unified_recommendation
+from unified_intelligence.domain.decisions import UnifiedDecisionPolicy
+
+
+def create_unified_recommendation(inventory: dict, delivery: dict | None = None) -> dict:
+    return UnifiedDecisionPolicy().evaluate(inventory, delivery).to_dict()
 
 
 def inventory(probability: float, reorder_required: bool = False) -> dict:

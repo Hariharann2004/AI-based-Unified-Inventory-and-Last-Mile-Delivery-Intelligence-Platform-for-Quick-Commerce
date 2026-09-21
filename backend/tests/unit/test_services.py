@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from unified_intelligence.delivery.service import DeliveryService
-from unified_intelligence.inventory.service import InventoryService
+from unified_intelligence.application.delivery_service import DeliveryService
+from unified_intelligence.application.inventory_service import InventoryService
 
 
 class RegressionStub:
@@ -23,9 +23,7 @@ class ClassificationStub:
 
 
 def test_inventory_service_calculates_reorder_and_health() -> None:
-    service = InventoryService.__new__(InventoryService)
-    service.demand_model = RegressionStub(20)
-    service.stockout_model = ClassificationStub(0.8)
+    service = InventoryService(RegressionStub(20), ClassificationStub(0.8))
 
     result = service.predict({
         "Date": "2024-01-01",
@@ -50,9 +48,7 @@ def test_inventory_service_calculates_reorder_and_health() -> None:
 
 
 def test_delivery_service_calculates_scores_and_cost() -> None:
-    service = DeliveryService.__new__(DeliveryService)
-    service.eta_model = RegressionStub(25)
-    service.delay_model = ClassificationStub(0.4)
+    service = DeliveryService(RegressionStub(25), ClassificationStub(0.4))
 
     result = service.predict({
         "delivery_id": "DEL-1",

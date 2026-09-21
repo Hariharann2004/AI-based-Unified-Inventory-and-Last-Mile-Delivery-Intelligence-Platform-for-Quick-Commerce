@@ -9,9 +9,9 @@ from __future__ import annotations
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from src.delivery.service import DeliveryService
-from src.inventory.service import InventoryService
-from src.decision_engine.service import create_unified_recommendation
+from unified_intelligence.delivery.service import DeliveryService
+from unified_intelligence.inventory.service import InventoryService
+from unified_intelligence.decision_engine.service import create_unified_recommendation
 
 app = Flask(__name__)
 CORS(app)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.decision_engine.service import create_unified_recommendation
+from unified_intelligence.decision_engine.service import create_unified_recommendation
 
 
 def inventory(probability: float, reorder_required: bool = False) -> dict:
@@ -46,4 +46,3 @@ def test_medium_delay_adds_monitoring_action() -> None:
 
     assert result["operational_priority"] == "Normal"
     assert result["actions"] == ["Monitor the delivery and prepare an ETA update"]
-

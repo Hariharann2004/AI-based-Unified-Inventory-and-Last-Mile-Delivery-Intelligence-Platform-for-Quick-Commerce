@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import pandas as pd
 
-from src.utils.modeling import LightGBMArtifact
+from unified_intelligence.utils.modeling import LightGBMArtifact
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[4]
 ETA_MODEL = ROOT / "models" / "delivery_eta.joblib"
 DELAY_MODEL = ROOT / "models" / "delivery_delay.joblib"
 

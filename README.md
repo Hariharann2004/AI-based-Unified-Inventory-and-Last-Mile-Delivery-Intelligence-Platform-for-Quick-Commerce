@@ -117,12 +117,8 @@ data/raw/                 Source inventory and delivery CSV datasets
 data/processed/           Optional generated training-ready data
 models/                   Trained LightGBM .joblib artifacts
 reports/                  Model evaluation metrics and data notes
-src/train_models.py       End-to-end training pipeline
-src/utils/modeling.py     Shared preprocessing and LightGBM artifact wrapper
-src/inventory/            Inventory inference and business rules
-src/delivery/             Delivery inference and business rules
-src/decision_engine/      Unified operational recommendation rules
-src/api/                  Flask API
+backend/src/unified_intelligence/  Backend application package
+backend/tests/                     Backend unit and API tests
 frontend/                 React and Vite demonstration dashboard
 ```
 
@@ -296,14 +292,15 @@ Create and activate a virtual environment, install dependencies, and train the m
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m src.train_models
+pip install -r backend/requirements.txt
+cd backend
+python -m unified_intelligence.train_models
 ```
 
 Start the Flask API:
 
 ```powershell
-python -m flask --app src.api.app run --debug
+python -m flask --app unified_intelligence.api.app run --debug
 ```
 
 Confirm the API at `http://127.0.0.1:5000/health`.

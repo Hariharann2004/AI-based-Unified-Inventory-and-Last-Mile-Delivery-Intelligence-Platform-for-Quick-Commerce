@@ -1,6 +1,6 @@
 """Train all four approved LightGBM models from the project's raw CSV files.
 
-Run: python -m src.train_models
+Run from backend/: python -m unified_intelligence.train_models
 """
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from src.utils.modeling import LightGBMArtifact
+from unified_intelligence.utils.modeling import LightGBMArtifact
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 RAW = ROOT / "data" / "raw"
 MODELS = ROOT / "models"
 REPORTS = ROOT / "reports"

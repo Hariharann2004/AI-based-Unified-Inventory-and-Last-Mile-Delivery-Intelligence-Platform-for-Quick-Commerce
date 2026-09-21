@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.delivery.service import DeliveryService
-from src.inventory.service import InventoryService
+from unified_intelligence.delivery.service import DeliveryService
+from unified_intelligence.inventory.service import InventoryService
 
 
 class RegressionStub:
@@ -75,4 +75,3 @@ def test_delivery_service_calculates_scores_and_cost() -> None:
     assert result["delay_risk"] == "Medium"
     assert result["estimated_delivery_cost"] == 60
     assert result["recommendation"] == "Monitor delivery and prepare an ETA update"
-

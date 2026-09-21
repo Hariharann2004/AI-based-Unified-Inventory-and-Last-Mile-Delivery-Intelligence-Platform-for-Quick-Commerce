@@ -4,9 +4,9 @@ from pathlib import Path
 import math
 import pandas as pd
 
-from src.utils.modeling import LightGBMArtifact
+from unified_intelligence.utils.modeling import LightGBMArtifact
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[4]
 DEMAND_MODEL = ROOT / "models" / "inventory_demand.joblib"
 STOCKOUT_MODEL = ROOT / "models" / "inventory_stockout.joblib"
 

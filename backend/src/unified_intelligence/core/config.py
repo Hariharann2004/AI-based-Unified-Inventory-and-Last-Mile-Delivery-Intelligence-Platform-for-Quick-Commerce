@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     api_port: int = Field(default=5000, ge=1, le=65535)
     cors_origins: tuple[str, ...] = ("http://127.0.0.1:5173", "http://localhost:5173")
     model_directory: Path = PROJECT_ROOT / "models"
+    artifact_manifest: Path = PROJECT_ROOT / "artifacts" / "manifest.json"
+    artifact_base_url: str | None = None
     database_url: str = f"sqlite:///{PROJECT_ROOT / 'data' / 'platform.db'}"
 
     @field_validator("cors_origins", mode="before")
@@ -36,6 +38,12 @@ class Settings(BaseSettings):
     @field_validator("model_directory", mode="before")
     @classmethod
     def resolve_model_directory(cls, value):
+        path = Path(value)
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @field_validator("artifact_manifest", mode="before")
+    @classmethod
+    def resolve_artifact_manifest(cls, value):
         path = Path(value)
         return path if path.is_absolute() else PROJECT_ROOT / path
 

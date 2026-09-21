@@ -213,6 +213,13 @@ coverage/
 # Optional local cache
 .eslintcache
 
+# Datasets and trained binaries are external artifacts. Their checksums are tracked
+# in artifacts/manifest.json; keep only directory placeholders in Git.
+data/raw/*
+!data/raw/.gitkeep
+models/*
+!models/.gitkeep
+
 # OS generated files
 .DS_Store
 Thumbs.db

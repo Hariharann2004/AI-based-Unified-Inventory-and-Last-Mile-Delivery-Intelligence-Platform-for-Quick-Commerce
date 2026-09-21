@@ -41,7 +41,7 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - A unified decision endpoint combining inventory and optional delivery results.
 - A Flask REST API.
 - A React demonstration dashboard.
-- Stored model artifacts and evaluation metrics.
+- Checksum-pinned external datasets/model artifacts and tracked evaluation metrics.
 
 ### Not implemented yet
 
@@ -53,7 +53,7 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - Warehouse reassignment, stock transfer, rider assignment, or route optimization.
 - Customer notification delivery.
 - Batch prediction endpoints.
-- Automated retraining, remote artifact storage, drift detection, or production deployment.
+- Automated retraining, a configured remote artifact store, drift detection, or production deployment.
 
 ## Current system architecture
 
@@ -115,9 +115,10 @@ The project has two distinct lifecycles:
 ## Project structure
 
 ```text
-data/raw/                 Source inventory and delivery CSV datasets
+artifacts/manifest.json   Versioned dataset/model checksums and expected locations
+data/raw/                 Git-ignored source datasets hydrated outside Git
 data/processed/           Optional generated training-ready data
-models/                   Trained LightGBM .joblib artifacts
+models/                   Git-ignored trained LightGBM artifacts
 reports/                  Model evaluation metrics and data notes
 backend/src/unified_intelligence/api/          Flask transport and request schemas
 backend/src/unified_intelligence/application/  Inference use-case orchestration
@@ -304,6 +305,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r backend/requirements.txt
 cd backend
+pip install --no-deps -e .
 python -m unified_intelligence.train_models
 ```
 
@@ -339,6 +341,18 @@ npm run build
 ```
 
 GitHub Actions runs the same backend and frontend checks only while a pull request is active.
+
+Datasets and trained model binaries are intentionally excluded from Git. After configuring
+`UID_ARTIFACT_BASE_URL` to an object-storage prefix with the manifest's directory layout, run:
+
+```powershell
+cd backend
+python -m unified_intelligence.artifacts sync
+python -m unified_intelligence.artifacts verify
+```
+
+The tracked `artifacts/manifest.json` pins every expected file by path, byte size, and SHA-256.
+The training command can regenerate model files locally when the source datasets are available.
 
 ## Current maturity and limitations
 

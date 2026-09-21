@@ -19,7 +19,11 @@ export function DecisionDashboardPage() {
       <button type="button" onClick={runDemo} disabled={loading}>
         {loading ? "Analysing…" : "Run demo decision"}
       </button>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
       {result && (
         <section className="grid" aria-label="Decision results">
           <MetricCard title="Inventory" values={result.inventory} />

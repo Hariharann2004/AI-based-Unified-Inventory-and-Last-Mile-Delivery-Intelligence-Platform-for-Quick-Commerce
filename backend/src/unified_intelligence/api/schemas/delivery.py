@@ -31,4 +31,3 @@ class DeliveryPredictionResponse(ApiModel):
     estimated_delivery_cost: float
     delivery_intelligence_score: float
     recommendation: str
-

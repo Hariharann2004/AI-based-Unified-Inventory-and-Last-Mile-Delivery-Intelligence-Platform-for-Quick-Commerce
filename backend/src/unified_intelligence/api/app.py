@@ -4,6 +4,7 @@ POST /api/inventory/predict with one inventory CSV row as JSON.
 POST /api/delivery/predict with one delivery CSV row as JSON.
 POST /api/decision/unified with {"inventory": {...}, "delivery": {...}}.
 """
+
 from __future__ import annotations
 
 from flask import Flask, jsonify, request
@@ -13,10 +14,10 @@ from pydantic import BaseModel, ValidationError
 from unified_intelligence.api.schemas.decisions import UnifiedDecisionRequest
 from unified_intelligence.api.schemas.delivery import DeliveryPredictionRequest
 from unified_intelligence.api.schemas.inventory import InventoryPredictionRequest
-from unified_intelligence.core.config import get_settings
 from unified_intelligence.application.decision_service import DecisionService
 from unified_intelligence.application.delivery_service import DeliveryService
 from unified_intelligence.application.inventory_service import InventoryService
+from unified_intelligence.core.config import get_settings
 
 settings = get_settings()
 app = Flask(__name__)
@@ -53,11 +54,13 @@ def validation_error(error: ValidationError):
 
 @app.get("/health")
 def health():
-    return jsonify({
-        "status": "ok",
-        "algorithm": "LightGBM only",
-        "environment": settings.environment,
-    })
+    return jsonify(
+        {
+            "status": "ok",
+            "algorithm": "LightGBM only",
+            "environment": settings.environment,
+        }
+    )
 
 
 @app.post("/api/inventory/predict")

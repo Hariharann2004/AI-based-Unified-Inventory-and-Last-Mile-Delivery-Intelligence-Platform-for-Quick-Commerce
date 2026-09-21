@@ -9,10 +9,23 @@ from unified_intelligence.utils.modeling import LightGBMArtifact
 
 
 class DeliveryService:
-    def __init__(self, eta_model: Any | None = None, delay_model: Any | None = None, *, settings: Settings | None = None, eta_path: Path | None = None, delay_path: Path | None = None, policy: DeliveryPolicy | None = None) -> None:
+    def __init__(
+        self,
+        eta_model: Any | None = None,
+        delay_model: Any | None = None,
+        *,
+        settings: Settings | None = None,
+        eta_path: Path | None = None,
+        delay_path: Path | None = None,
+        policy: DeliveryPolicy | None = None,
+    ) -> None:
         config = settings or get_settings()
-        self.eta_model = eta_model or LightGBMArtifact.load(eta_path or config.model_directory / "delivery_eta.joblib")
-        self.delay_model = delay_model or LightGBMArtifact.load(delay_path or config.model_directory / "delivery_delay.joblib")
+        self.eta_model = eta_model or LightGBMArtifact.load(
+            eta_path or config.model_directory / "delivery_eta.joblib"
+        )
+        self.delay_model = delay_model or LightGBMArtifact.load(
+            delay_path or config.model_directory / "delivery_delay.joblib"
+        )
         self.policy = policy or DeliveryPolicy()
 
     def predict(self, record: dict[str, Any]) -> dict[str, Any]:

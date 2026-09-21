@@ -129,6 +129,7 @@ frontend/                 React and Vite demonstration dashboard
   src/app/                Application shell and global styles
   src/features/           Feature-owned UI, hooks, API, and data modules
   src/shared/             Cross-feature configuration and utilities
+.github/workflows/        Pull-request-only quality gates
 ```
 
 ## Data
@@ -322,6 +323,23 @@ npm install
 npm run dev
 ```
 
+Run the local quality gates before opening a pull request:
+
+```powershell
+cd backend
+ruff check src tests
+ruff format --check src tests
+pytest
+
+cd ../frontend
+npm run lint
+npm run format:check
+npm run test:coverage
+npm run build
+```
+
+GitHub Actions runs the same backend and frontend checks only while a pull request is active.
+
 ## Current maturity and limitations
 
 This repository should be treated as **Version 0: an offline-trained, single-record prediction prototype with a demonstration UI**.
@@ -334,8 +352,8 @@ Important limitations include:
 4. **`delivery_rating` may be unavailable before delivery.** If it is collected after completion, it should be removed or replaced by a historical rider/partner rating.
 5. **The reorder decision and quantity can conflict.** Inventory below the reorder point can trigger a reorder while the calculated quantity remains zero.
 6. **Evaluation uses a single split.** There is no multi-period backtesting, cross-validation, external validation, or business-impact simulation.
-7. **API validation is basic.** There are no typed request schemas, detailed range checks, authentication, rate limiting, or restricted CORS.
-8. **No automated tests are included.** Unit, API, integration, frontend, and data-quality tests still need to be added.
+7. **API protection is incomplete.** Typed schemas and restricted CORS are present, but authentication and rate limiting are not implemented.
+8. **Test coverage is still growing.** Unit, API smoke, and frontend tests are present; broader integration and data-quality suites are still needed.
 9. **There is no feedback loop.** Predictions, actions, and actual outcomes are not persisted for later evaluation or retraining.
 
 ## Future architecture

@@ -3,9 +3,18 @@ import pandas as pd
 from unified_intelligence.ml.features.common import normalize_categorical_columns
 
 INVENTORY_FEATURES = [
-    "Date", "SKU_ID", "Warehouse_ID", "Supplier_ID", "Region", "Inventory_Level",
-    "Supplier_Lead_Time_Days", "Reorder_Point", "Order_Quantity", "Unit_Cost",
-    "Unit_Price", "Promotion_Flag",
+    "Date",
+    "SKU_ID",
+    "Warehouse_ID",
+    "Supplier_ID",
+    "Region",
+    "Inventory_Level",
+    "Supplier_Lead_Time_Days",
+    "Reorder_Point",
+    "Order_Quantity",
+    "Unit_Cost",
+    "Unit_Price",
+    "Promotion_Flag",
 ]
 
 

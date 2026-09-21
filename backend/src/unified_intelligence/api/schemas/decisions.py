@@ -27,4 +27,3 @@ class UnifiedDecisionResponse(ApiModel):
     inventory: InventoryPredictionResponse
     delivery: DeliveryPredictionResponse | None
     decision: DecisionResponse
-

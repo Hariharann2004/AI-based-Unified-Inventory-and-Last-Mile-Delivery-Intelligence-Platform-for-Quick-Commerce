@@ -7,8 +7,12 @@ def test_model_metadata_is_serializable_and_traceable(tmp_path) -> None:
     dataset = tmp_path / "dataset.csv"
     dataset.write_text("value\n1\n", encoding="utf-8")
     metadata = ModelMetadata(
-        name="test_model", task="regression", target="value", features=["value"],
-        metrics={"mae": 0.1}, data_fingerprint=dataset_fingerprint(dataset),
+        name="test_model",
+        task="regression",
+        target="value",
+        features=["value"],
+        metrics={"mae": 0.1},
+        data_fingerprint=dataset_fingerprint(dataset),
     )
 
     payload = metadata.to_dict()

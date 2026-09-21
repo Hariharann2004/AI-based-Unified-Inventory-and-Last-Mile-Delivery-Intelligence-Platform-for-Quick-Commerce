@@ -9,10 +9,23 @@ from unified_intelligence.utils.modeling import LightGBMArtifact
 
 
 class InventoryService:
-    def __init__(self, demand_model: Any | None = None, stockout_model: Any | None = None, *, settings: Settings | None = None, demand_path: Path | None = None, stockout_path: Path | None = None, policy: InventoryPolicy | None = None) -> None:
+    def __init__(
+        self,
+        demand_model: Any | None = None,
+        stockout_model: Any | None = None,
+        *,
+        settings: Settings | None = None,
+        demand_path: Path | None = None,
+        stockout_path: Path | None = None,
+        policy: InventoryPolicy | None = None,
+    ) -> None:
         config = settings or get_settings()
-        self.demand_model = demand_model or LightGBMArtifact.load(demand_path or config.model_directory / "inventory_demand.joblib")
-        self.stockout_model = stockout_model or LightGBMArtifact.load(stockout_path or config.model_directory / "inventory_stockout.joblib")
+        self.demand_model = demand_model or LightGBMArtifact.load(
+            demand_path or config.model_directory / "inventory_demand.joblib"
+        )
+        self.stockout_model = stockout_model or LightGBMArtifact.load(
+            stockout_path or config.model_directory / "inventory_stockout.joblib"
+        )
         self.policy = policy or InventoryPolicy()
 
     def predict(self, record: dict[str, Any]) -> dict[str, Any]:

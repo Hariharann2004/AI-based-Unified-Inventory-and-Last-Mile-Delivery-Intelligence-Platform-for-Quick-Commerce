@@ -16,4 +16,3 @@ class HealthResponse(ApiModel):
     status: str
     algorithm: str
     environment: str
-

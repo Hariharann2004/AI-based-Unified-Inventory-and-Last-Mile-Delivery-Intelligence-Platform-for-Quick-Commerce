@@ -3,6 +3,7 @@
 Only LightGBM models are created here. Pandas one-hot encoding is used solely to
 prepare mixed tabular columns consistently during training and inference.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,7 +14,6 @@ import joblib
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier, LGBMRegressor
-
 
 Task = Literal["regression", "classification"]
 
@@ -36,17 +36,25 @@ class LightGBMArtifact:
     @classmethod
     def train(
         cls, X: pd.DataFrame, y: pd.Series, task: Task, random_state: int = 42
-    ) -> "LightGBMArtifact":
+    ) -> LightGBMArtifact:
         encoded = cls._encode(X)
         if task == "regression":
             model = LGBMRegressor(
-                objective="regression_l1", n_estimators=300, learning_rate=0.05,
-                num_leaves=31, random_state=random_state, verbosity=-1,
+                objective="regression_l1",
+                n_estimators=300,
+                learning_rate=0.05,
+                num_leaves=31,
+                random_state=random_state,
+                verbosity=-1,
             )
         else:
             model = LGBMClassifier(
-                objective="binary", n_estimators=300, learning_rate=0.05,
-                num_leaves=31, random_state=random_state, verbosity=-1,
+                objective="binary",
+                n_estimators=300,
+                learning_rate=0.05,
+                num_leaves=31,
+                random_state=random_state,
+                verbosity=-1,
             )
         model.fit(encoded, y)
         return cls(task, list(X.columns), list(encoded.columns), model)
@@ -71,5 +79,5 @@ class LightGBMArtifact:
         joblib.dump(self, path)
 
     @staticmethod
-    def load(path: Path) -> "LightGBMArtifact":
+    def load(path: Path) -> LightGBMArtifact:
         return joblib.load(path)

@@ -53,7 +53,7 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - Warehouse reassignment, stock transfer, rider assignment, or route optimization.
 - Customer notification delivery.
 - Batch prediction endpoints.
-- Automated retraining, model registry, drift detection, or production deployment.
+- Automated retraining, remote artifact storage, drift detection, or production deployment.
 
 ## Current system architecture
 
@@ -62,9 +62,11 @@ flowchart TB
     subgraph Training["Offline model-training pipeline"]
         ICSV["Inventory CSV<br/>91,250 rows"]
         DCSV["Delivery CSV<br/>25,000 rows"]
-        TRAIN["train_models.py<br/>validation, feature preparation,<br/>train/test splitting"]
-        ENCODE["Pandas preprocessing<br/>calendar features + one-hot encoding"]
+        TRAIN["TrainingPipeline<br/>validation + train/test splitting"]
+        FEATURES["Feature modules<br/>inventory + delivery preparation"]
+        ENCODE["LightGBMArtifact<br/>consistent one-hot encoding"]
         LGBM["LightGBM training"]
+        REGISTRY["File model registry<br/>artifact + traceable metadata"]
         DM["Demand regression model"]
         SM["Stockout classification model"]
         EM["ETA regression model"]
@@ -73,11 +75,12 @@ flowchart TB
 
         ICSV --> TRAIN
         DCSV --> TRAIN
-        TRAIN --> ENCODE --> LGBM
-        LGBM --> DM
-        LGBM --> SM
-        LGBM --> EM
-        LGBM --> LM
+        TRAIN --> FEATURES --> ENCODE --> LGBM
+        LGBM --> REGISTRY
+        REGISTRY --> DM
+        REGISTRY --> SM
+        REGISTRY --> EM
+        REGISTRY --> LM
         LGBM --> METRICS
     end
 
@@ -85,21 +88,20 @@ flowchart TB
         USER["Operator / demo user"]
         REACT["React dashboard<br/>hard-coded demonstration input"]
         API["Flask REST API"]
-        INV["InventoryService"]
-        DEL["DeliveryService"]
-        RULES["Unified decision engine<br/>deterministic business rules"]
+        APP["Application services<br/>model inference orchestration"]
+        DOMAIN["Domain policies<br/>inventory + delivery rules"]
+        RULES["Unified decision policy<br/>deterministic business rules"]
         RESPONSE["Combined JSON result<br/>predictions, scores, priority,<br/>recommended actions"]
 
         USER --> REACT
         REACT -->|"POST /api/decision/unified"| API
-        API --> INV
-        API --> DEL
-        DM --> INV
-        SM --> INV
-        EM --> DEL
-        LM --> DEL
-        INV --> RULES
-        DEL --> RULES
+        API --> APP
+        DM --> APP
+        SM --> APP
+        EM --> APP
+        LM --> APP
+        APP --> DOMAIN
+        DOMAIN --> RULES
         RULES --> RESPONSE
         RESPONSE --> REACT
     end
@@ -107,8 +109,8 @@ flowchart TB
 
 The project has two distinct lifecycles:
 
-- **Training:** CSV data is processed manually to create four version-independent `.joblib` artifacts and a metrics report.
-- **Inference:** Flask loads those artifacts and evaluates one submitted inventory/delivery record at a time.
+- **Training:** Dedicated feature, evaluation, training, and registry modules create four `.joblib` artifacts, per-model metadata, and a metrics report.
+- **Inference:** Application services load the artifacts, invoke pure domain policies, and evaluate one submitted inventory/delivery record at a time.
 
 ## Project structure
 
@@ -117,7 +119,11 @@ data/raw/                 Source inventory and delivery CSV datasets
 data/processed/           Optional generated training-ready data
 models/                   Trained LightGBM .joblib artifacts
 reports/                  Model evaluation metrics and data notes
-backend/src/unified_intelligence/  Backend application package
+backend/src/unified_intelligence/api/          Flask transport and request schemas
+backend/src/unified_intelligence/application/  Inference use-case orchestration
+backend/src/unified_intelligence/domain/       Pure business entities and policies
+backend/src/unified_intelligence/ml/           Features, evaluation, training, registry
+backend/src/unified_intelligence/utils/        Shared model artifact adapter
 backend/tests/                     Backend unit and API tests
 frontend/                 React and Vite demonstration dashboard
 ```

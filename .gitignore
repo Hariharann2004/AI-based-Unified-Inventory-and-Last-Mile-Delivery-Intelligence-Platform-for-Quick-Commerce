@@ -220,6 +220,11 @@ data/raw/*
 models/*
 !models/.gitkeep
 
+# Local operational persistence
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
 # OS generated files
 .DS_Store
 Thumbs.db

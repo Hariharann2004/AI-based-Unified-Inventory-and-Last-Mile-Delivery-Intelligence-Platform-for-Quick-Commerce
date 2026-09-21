@@ -45,10 +45,9 @@ The current decision policy evaluates only the warehouse already assigned to an 
 
 ### Not implemented yet
 
-- Operational database or warehouse-management-system integration.
+- Warehouse-management-system integration.
 - Live order, inventory, GPS, weather, or traffic feeds.
 - User authentication and role-based authorization.
-- Persistent prediction or decision history.
 - Purchase-order creation or supplier integration.
 - Warehouse reassignment, stock transfer, rider assignment, or route optimization.
 - Customer notification delivery.
@@ -91,6 +90,8 @@ flowchart TB
         APP["Application services<br/>model inference orchestration"]
         DOMAIN["Domain policies<br/>inventory + delivery rules"]
         RULES["Unified decision policy<br/>deterministic business rules"]
+        DB["SQLite decision history<br/>repository adapter"]
+        EVENTS["Operational event port<br/>logging adapter"]
         RESPONSE["Combined JSON result<br/>predictions, scores, priority,<br/>recommended actions"]
 
         USER --> REACT
@@ -102,6 +103,8 @@ flowchart TB
         LM --> APP
         APP --> DOMAIN
         DOMAIN --> RULES
+        RULES --> DB
+        RULES --> EVENTS
         RULES --> RESPONSE
         RESPONSE --> REACT
     end
@@ -123,6 +126,7 @@ reports/                  Model evaluation metrics and data notes
 backend/src/unified_intelligence/api/          Flask transport and request schemas
 backend/src/unified_intelligence/application/  Inference use-case orchestration
 backend/src/unified_intelligence/domain/       Pure business entities and policies
+backend/src/unified_intelligence/infrastructure/ Database and integration adapters
 backend/src/unified_intelligence/ml/           Features, evaluation, training, registry
 backend/src/unified_intelligence/utils/        Shared model artifact adapter
 backend/tests/                     Backend unit and API tests
@@ -353,6 +357,11 @@ python -m unified_intelligence.artifacts verify
 
 The tracked `artifacts/manifest.json` pins every expected file by path, byte size, and SHA-256.
 The training command can regenerate model files locally when the source datasets are available.
+
+Successful unified decisions are persisted through a `DecisionRepository` port. The default
+SQLite adapter writes to `UID_DATABASE_URL`, and `GET /api/decisions?limit=20` returns recent
+history. A separate event-publisher port currently uses structured application logging and can
+later be replaced by a queue, notification service, WMS, or purchase-order adapter.
 
 ## Current maturity and limitations
 

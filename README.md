@@ -126,6 +126,9 @@ backend/src/unified_intelligence/ml/           Features, evaluation, training, r
 backend/src/unified_intelligence/utils/        Shared model artifact adapter
 backend/tests/                     Backend unit and API tests
 frontend/                 React and Vite demonstration dashboard
+  src/app/                Application shell and global styles
+  src/features/           Feature-owned UI, hooks, API, and data modules
+  src/shared/             Cross-feature configuration and utilities
 ```
 
 ## Data

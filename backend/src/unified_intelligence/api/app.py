@@ -14,6 +14,7 @@ from pydantic import BaseModel, ValidationError
 from unified_intelligence.api.schemas.decisions import UnifiedDecisionRequest
 from unified_intelligence.api.schemas.delivery import DeliveryPredictionRequest
 from unified_intelligence.api.schemas.inventory import InventoryPredictionRequest
+from unified_intelligence.api.workbench import workbench
 from unified_intelligence.application.decision_service import DecisionService
 from unified_intelligence.application.delivery_service import DeliveryService
 from unified_intelligence.application.inventory_service import InventoryService
@@ -23,6 +24,8 @@ from unified_intelligence.infrastructure.persistence import SQLiteDecisionReposi
 
 settings = get_settings()
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+app.register_blueprint(workbench)
 CORS(app, origins=settings.cors_origins)
 _inventory: InventoryService | None = None
 _delivery: DeliveryService | None = None

@@ -4,6 +4,15 @@ Software Design and Development Project — Final Year Project 1
 
 ## Project overview
 
+The operations-workbench upgrade is being developed in six feature branches. See
+[implementation phases](docs/implementation-phases.md) for scope and merge order.
+The workbench data API can import local datasets with `POST /api/workbench/imports/inventory`
+or `/delivery`, or accept a multipart UTF-8 CSV in the `file` field. Import reports include
+accepted/rejected counts, SHA-256 provenance, and deduplication. Browse imported records at
+`GET /api/workbench/records/inventory?limit=50&offset=0` and list imports at
+`GET /api/workbench/imports`. Outcome columns are stored separately from prediction inputs.
+The two source datasets are independent and are never automatically joined as real orders.
+
 This repository contains a proof-of-concept decision-support platform for quick-commerce operations. It connects inventory intelligence with last-mile delivery intelligence so an operator can evaluate the assigned warehouse, forecast demand, identify stockout and delivery risks, and receive one combined operational recommendation.
 
 The current implementation contains four LightGBM models:

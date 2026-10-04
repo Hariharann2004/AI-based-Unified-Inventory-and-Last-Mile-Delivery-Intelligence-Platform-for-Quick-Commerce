@@ -25,7 +25,7 @@ class InventoryPolicy:
         reorder_point = float(record["Reorder_Point"])
         lead_time = max(1.0, float(record["Supplier_Lead_Time_Days"]))
         required_stock = demand * lead_time * 1.15
-        reorder_quantity = max(0, math.ceil(required_stock - inventory))
+        reorder_quantity = max(0, math.ceil(max(required_stock, reorder_point + 1) - inventory))
         should_reorder = inventory <= reorder_point or probability >= 0.70
         health = max(
             0.0,
@@ -42,6 +42,8 @@ class InventoryPolicy:
             recommendation = (
                 "Reorder immediately" if probability >= 0.70 else "Place a reorder soon"
             )
+            if reorder_quantity == 0:
+                recommendation = "Review stockout risk; calculated stock coverage is sufficient"
 
         return InventoryAssessment(
             sku_id=record.get("SKU_ID"),

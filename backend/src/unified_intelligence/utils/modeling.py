@@ -74,6 +74,41 @@ class LightGBMArtifact:
             raise ValueError("Probabilities are only available for a classification model.")
         return self.model.predict_proba(self.prepare(records))[:, 1]
 
+    def explain(self, records: pd.DataFrame) -> dict:
+        """Native LightGBM contributions in regression units or binary raw log-odds."""
+        prepared = self.prepare(records)
+        values = np.asarray(self.model.booster_.predict(prepared, pred_contrib=True))[0]
+        grouped = {}
+        for name, value in zip(self.encoded_features, values[:-1], strict=True):
+            source = next(
+                (
+                    f
+                    for f in sorted(self.raw_features, key=len, reverse=True)
+                    if name == f or name.startswith(f + "_")
+                ),
+                name,
+            )
+            grouped[source] = grouped.get(source, 0.0) + float(value)
+        unknown = [
+            name
+            for name in self._encode(records[self.raw_features]).columns
+            if name not in self.encoded_features
+        ]
+        return {
+            "available": True,
+            "method": "LightGBM native feature contributions",
+            "scale": "log_odds" if self.task == "classification" else "target_units",
+            "baseline": float(values[-1]),
+            "factors": [
+                {"feature": name, "contribution": round(value, 6)}
+                for name, value in sorted(grouped.items(), key=lambda x: abs(x[1]), reverse=True)[
+                    :8
+                ]
+            ],
+            "unknown_encoded_categories": unknown,
+            "note": "Model influence, not causation; classifier contributions are not percentages.",
+        }
+
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(self, path)

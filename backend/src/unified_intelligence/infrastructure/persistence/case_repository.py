@@ -23,6 +23,17 @@ CREATE TABLE IF NOT EXISTS case_audit (
 
 
 def action_drafts(evidence):
+    if evidence["kind"] == "unified":
+        return [
+            draft
+            for kind in ["inventory", "delivery"]
+            for draft in action_drafts(
+                {
+                    "kind": kind,
+                    "assessment": evidence["assessment"][kind],
+                }
+            )
+        ]
     result, assessment = [], evidence["assessment"]
     if evidence["kind"] == "inventory" and assessment["reorder_required"]:
         quantity = assessment["recommended_reorder_quantity"]

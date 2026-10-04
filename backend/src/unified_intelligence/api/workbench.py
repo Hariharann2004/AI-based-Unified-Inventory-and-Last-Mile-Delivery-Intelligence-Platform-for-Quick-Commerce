@@ -3,7 +3,13 @@
 from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
 
-from unified_intelligence.api.schemas.workbench import ActionRequest, BatchRequest
+from unified_intelligence.api.schemas.workbench import (
+    ActionRequest,
+    BatchRequest,
+    ReplayRequest,
+    ScenarioRequest,
+    StepRequest,
+)
 from unified_intelligence.application.batch_service import BatchService
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
@@ -11,6 +17,8 @@ from unified_intelligence.application.ingestion_service import (
     IngestionService,
     validate_kind,
 )
+from unified_intelligence.application.replay_service import ReplayConflict, ReplayService
+from unified_intelligence.application.scenario_service import SCENARIOS, ScenarioService
 from unified_intelligence.core.config import PROJECT_ROOT, get_settings
 from unified_intelligence.infrastructure.persistence.case_repository import CaseRepository
 from unified_intelligence.infrastructure.persistence.sqlite_decision_repository import (
@@ -129,3 +137,40 @@ def case(case_id):
 def case_action(case_id):
     value = payload(ActionRequest)
     return jsonify(store().transition(case_id, value.action, value.actor, value.reason))
+
+
+@workbench.errorhandler(ReplayConflict)
+def replay_conflict(error):
+    return jsonify({"error": str(error)}), 409
+
+
+@workbench.post("/replays")
+def start_replay():
+    value = payload(ReplayRequest)
+    return jsonify(
+        ReplayService(store(), batch_service()).start(value.kind, value.import_id, value.limit)
+    ), 201
+
+
+@workbench.get("/replays/<run_id>")
+def get_replay(run_id):
+    return jsonify(ReplayService(store(), batch_service()).get(run_id))
+
+
+@workbench.post("/replays/<run_id>/steps")
+def step_replay(run_id):
+    value = payload(StepRequest)
+    return jsonify(
+        ReplayService(store(), batch_service()).step(run_id, value.expected_cursor, value.count)
+    )
+
+
+@workbench.get("/scenarios")
+def scenarios():
+    return jsonify(SCENARIOS)
+
+
+@workbench.post("/scenarios")
+def run_scenario():
+    value = payload(ScenarioRequest)
+    return jsonify(ScenarioService(store(), batch_service()).evaluate(**value.model_dump()))

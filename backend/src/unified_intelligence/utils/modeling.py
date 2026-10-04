@@ -46,6 +46,7 @@ class LightGBMArtifact:
                 num_leaves=31,
                 random_state=random_state,
                 verbosity=-1,
+                n_jobs=2,
             )
         else:
             model = LGBMClassifier(
@@ -55,6 +56,7 @@ class LightGBMArtifact:
                 num_leaves=31,
                 random_state=random_state,
                 verbosity=-1,
+                n_jobs=2,
             )
         model.fit(encoded, y)
         return cls(task, list(X.columns), list(encoded.columns), model)

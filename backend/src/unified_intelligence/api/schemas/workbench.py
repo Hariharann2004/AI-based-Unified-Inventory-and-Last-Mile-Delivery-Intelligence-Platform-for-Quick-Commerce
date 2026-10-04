@@ -31,3 +31,8 @@ class ScenarioRequest(ApiModel):
     inventory_id: str | None = None
     delivery_id: str | None = None
     mapping_reason: str = Field(default="", max_length=500)
+
+
+class EvaluationRequest(ApiModel):
+    kind: Literal["inventory", "delivery"]
+    import_id: str = Field(min_length=1)

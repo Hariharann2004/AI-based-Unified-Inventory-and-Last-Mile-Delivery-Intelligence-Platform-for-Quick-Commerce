@@ -6,11 +6,13 @@ from pydantic import ValidationError
 from unified_intelligence.api.schemas.workbench import (
     ActionRequest,
     BatchRequest,
+    EvaluationRequest,
     ReplayRequest,
     ScenarioRequest,
     StepRequest,
 )
 from unified_intelligence.application.batch_service import BatchService
+from unified_intelligence.application.evaluation_service import EvaluationService
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
     MAX_BYTES,
@@ -174,3 +176,19 @@ def scenarios():
 def run_scenario():
     value = payload(ScenarioRequest)
     return jsonify(ScenarioService(store(), batch_service()).evaluate(**value.model_dump()))
+
+
+@workbench.get("/evaluations")
+def evaluations():
+    return jsonify(EvaluationService(store()).reports())
+
+
+@workbench.get("/evaluations/<evaluation_id>")
+def evaluation(evaluation_id):
+    return jsonify(EvaluationService(store()).get(evaluation_id))
+
+
+@workbench.post("/evaluations")
+def start_evaluation():
+    value = payload(EvaluationRequest)
+    return jsonify(EvaluationService(store()).start(value.kind, value.import_id)), 202

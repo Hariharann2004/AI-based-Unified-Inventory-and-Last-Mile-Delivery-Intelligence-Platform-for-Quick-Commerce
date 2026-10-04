@@ -1,7 +1,10 @@
 """Local workbench API. No inferred joins or externally executed actions."""
 
 from flask import Blueprint, jsonify, request
+from pydantic import ValidationError
 
+from unified_intelligence.api.schemas.workbench import BatchRequest
+from unified_intelligence.application.batch_service import BatchService
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
     MAX_BYTES,
@@ -15,6 +18,33 @@ from unified_intelligence.infrastructure.persistence.sqlite_decision_repository 
 from unified_intelligence.infrastructure.persistence.workbench_store import WorkbenchStore
 
 workbench = Blueprint("workbench", __name__, url_prefix="/api/workbench")
+
+
+@workbench.errorhandler(ValidationError)
+def validation(error):
+    return jsonify(
+        {"error": "Request validation failed.", "details": error.errors(include_context=False)}
+    ), 422
+
+
+def payload(model):
+    value = request.get_json(silent=True)
+    if not isinstance(value, dict):
+        raise ValueError("Expected a JSON object.")
+    return model.model_validate(value)
+
+
+def batch_service():
+    from unified_intelligence.api.app import delivery_service, inventory_service
+
+    return BatchService(
+        store(), inventory_service, delivery_service, get_settings().model_directory
+    )
+
+
+@workbench.post("/batches")
+def batches():
+    return jsonify(batch_service().process(payload(BatchRequest).record_ids))
 
 
 def store():

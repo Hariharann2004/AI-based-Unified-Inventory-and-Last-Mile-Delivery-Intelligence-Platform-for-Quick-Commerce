@@ -12,6 +12,7 @@ class ArtifactEntry:
     path: str
     size_bytes: int
     sha256: str
+    download_url: str | None = None
 
     def __post_init__(self) -> None:
         candidate = PurePosixPath(self.path)
@@ -21,6 +22,8 @@ class ArtifactEntry:
             raise ValueError(f"Unsupported artifact kind: {self.kind}")
         if len(self.sha256) != 64:
             raise ValueError(f"Invalid SHA-256 digest for artifact: {self.name}")
+        if self.download_url is not None and not self.download_url.startswith("https://"):
+            raise ValueError(f"Artifact download URL must use HTTPS: {self.name}")
 
 
 @dataclass(frozen=True, slots=True)

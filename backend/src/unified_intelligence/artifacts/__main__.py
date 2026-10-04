@@ -12,8 +12,6 @@ def main() -> int:
     settings = get_settings()
     manager = ArtifactManager(PROJECT_ROOT, ArtifactManifest.load(settings.artifact_manifest))
     if arguments.command == "sync":
-        if not settings.artifact_base_url:
-            parser.error("UID_ARTIFACT_BASE_URL is required for sync.")
         statuses = manager.sync(settings.artifact_base_url)
     else:
         statuses = manager.verify()

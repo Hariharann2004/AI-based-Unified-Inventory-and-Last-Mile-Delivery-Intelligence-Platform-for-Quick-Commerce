@@ -54,15 +54,19 @@ class ArtifactManager:
                 statuses.append(ArtifactStatus(entry.name, target, True, "verified"))
         return statuses
 
-    def sync(self, base_url: str) -> list[ArtifactStatus]:
-        if not base_url.startswith(("https://", "http://")):
-            raise ValueError("Artifact base URL must use HTTP or HTTPS.")
+    def sync(self, base_url: str | None = None) -> list[ArtifactStatus]:
+        if base_url and not base_url.startswith("https://"):
+            raise ValueError("Artifact base URL must use HTTPS.")
         for entry, status in zip(self.manifest.artifacts, self.verify(), strict=True):
             if status.valid:
                 continue
             target = self._target(entry)
+            url = entry.download_url
+            if url is None:
+                if not base_url:
+                    raise ValueError(f"No download URL configured for artifact: {entry.name}")
+                url = urljoin(f"{base_url.rstrip('/')}/", entry.path)
             target.parent.mkdir(parents=True, exist_ok=True)
-            url = urljoin(f"{base_url.rstrip('/')}/", entry.path)
             descriptor, temporary_name = tempfile.mkstemp(dir=target.parent, suffix=".download")
             try:
                 with os.fdopen(descriptor, "wb") as destination, urlopen(url) as response:

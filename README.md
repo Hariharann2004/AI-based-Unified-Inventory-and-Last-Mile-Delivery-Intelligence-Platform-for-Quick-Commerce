@@ -33,7 +33,7 @@ The current decision policy evaluates only the warehouse already assigned to an 
 
 ### Implemented
 
-- Offline training of four LightGBM models from the included CSV datasets.
+- Offline training of four LightGBM models from separately obtained CSV datasets.
 - Consistent categorical encoding for training and inference.
 - Single-record inventory prediction.
 - Single-record delivery prediction.
@@ -293,25 +293,32 @@ It is a demonstration interface. It does not yet provide editable inputs, wareho
 
 ### Prerequisites
 
-- Python 3.10 or newer from python.org.
+- Python 3.12 or newer from python.org.
 - Node.js and npm.
 
 Verify Python before creating the environment:
 
 ```powershell
-python --version
+py -3.12 --version
 ```
 
-Create and activate a virtual environment, install dependencies, and train the models:
+Create and activate a virtual environment, then install the backend:
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r backend/requirements.txt
 cd backend
 pip install --no-deps -e .
-python -m unified_intelligence.train_models
 ```
+
+The raw CSVs and trained model binaries are not part of a fresh Git checkout. Place
+`supply_chain_dataset1.csv` and `Quick_Commerce_Delivery_Logistics.csv` in `data/raw/`,
+and the four `.joblib` files named in [`artifacts/manifest.json`](artifacts/manifest.json)
+in `models/`. From `backend/`, run `python -m unified_intelligence.artifacts verify` to
+check their sizes and SHA-256 hashes. Once the CSVs are available, you can create the
+models yourself with `python -m unified_intelligence.train_models` instead of obtaining
+the pre-trained binaries. See the dataset sections above for their required columns.
 
 Start the Flask API:
 
@@ -346,8 +353,9 @@ npm run build
 
 GitHub Actions runs the same backend and frontend checks only while a pull request is active.
 
-Datasets and trained model binaries are intentionally excluded from Git. After configuring
-`UID_ARTIFACT_BASE_URL` to an object-storage prefix with the manifest's directory layout, run:
+Datasets and trained model binaries are intentionally excluded from Git. If the manifest
+contains HTTPS download URLs, or a compatible artifact server is configured through
+`UID_ARTIFACT_BASE_URL`, run:
 
 ```powershell
 cd backend
@@ -377,7 +385,8 @@ Important limitations include:
 6. **Evaluation uses a single split.** There is no multi-period backtesting, cross-validation, external validation, or business-impact simulation.
 7. **API protection is incomplete.** Typed schemas and restricted CORS are present, but authentication and rate limiting are not implemented.
 8. **Test coverage is still growing.** Unit, API smoke, and frontend tests are present; broader integration and data-quality suites are still needed.
-9. **There is no feedback loop.** Predictions, actions, and actual outcomes are not persisted for later evaluation or retraining.
+9. **The feedback loop is incomplete.** Unified decisions are saved in SQLite, but actual
+   demand, stockout, and delivery outcomes are not collected for later evaluation or retraining.
 
 ## Future architecture
 

@@ -152,3 +152,12 @@ def test_completed_evaluation_persists_report(tmp_path):
     )
     assert result["status"] == "completed"
     assert service.get("fixture")["report"]["accepted_targets"] == 120
+    service.save(
+        {
+            "evaluation_id": "interrupted",
+            "created_at": "2024-01-01",
+            "status": "running",
+            "worker_id": "previous-process",
+        }
+    )
+    assert service.get("interrupted")["status"] == "failed"

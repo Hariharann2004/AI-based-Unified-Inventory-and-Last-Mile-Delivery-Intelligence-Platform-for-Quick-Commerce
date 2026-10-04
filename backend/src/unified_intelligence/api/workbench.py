@@ -109,6 +109,8 @@ def records(kind):
             import_id=request.args.get("import_id"),
             limit=request.args.get("limit", 50, type=int),
             offset=request.args.get("offset", 0, type=int),
+            warehouse=request.args.get("warehouse"),
+            sku=request.args.get("sku"),
         )
     )
 

@@ -1,5 +1,5 @@
-import { DecisionDashboardPage } from "../features/decision-dashboard/pages/DecisionDashboardPage.jsx";
+import { Workbench } from "../features/workbench/Workbench.jsx";
 
 export default function App() {
-  return <DecisionDashboardPage />;
+  return <Workbench />;
 }

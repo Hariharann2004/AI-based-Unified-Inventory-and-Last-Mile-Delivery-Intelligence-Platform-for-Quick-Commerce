@@ -3,7 +3,7 @@
 from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
 
-from unified_intelligence.api.schemas.workbench import BatchRequest
+from unified_intelligence.api.schemas.workbench import ActionRequest, BatchRequest
 from unified_intelligence.application.batch_service import BatchService
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
@@ -12,10 +12,10 @@ from unified_intelligence.application.ingestion_service import (
     validate_kind,
 )
 from unified_intelligence.core.config import PROJECT_ROOT, get_settings
+from unified_intelligence.infrastructure.persistence.case_repository import CaseRepository
 from unified_intelligence.infrastructure.persistence.sqlite_decision_repository import (
     SQLiteDecisionRepository,
 )
-from unified_intelligence.infrastructure.persistence.workbench_store import WorkbenchStore
 
 workbench = Blueprint("workbench", __name__, url_prefix="/api/workbench")
 
@@ -51,7 +51,7 @@ def store():
     path = SQLiteDecisionRepository.from_url(
         get_settings().database_url, PROJECT_ROOT
     ).database_path
-    return WorkbenchStore(path)
+    return CaseRepository(path)
 
 
 @workbench.errorhandler(ValueError)
@@ -106,3 +106,26 @@ def records(kind):
 @workbench.get("/record/<record_id>")
 def record(record_id):
     return jsonify(store().record(record_id))
+
+
+@workbench.get("/cases")
+def cases():
+    return jsonify(
+        store().cases(
+            kind=request.args.get("kind"),
+            status=request.args.get("status"),
+            limit=request.args.get("limit", 50, type=int),
+            offset=request.args.get("offset", 0, type=int),
+        )
+    )
+
+
+@workbench.get("/cases/<case_id>")
+def case(case_id):
+    return jsonify(store().case(case_id))
+
+
+@workbench.post("/cases/<case_id>/actions")
+def case_action(case_id):
+    value = payload(ActionRequest)
+    return jsonify(store().transition(case_id, value.action, value.actor, value.reason))

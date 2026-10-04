@@ -97,7 +97,9 @@ class BatchService:
         results, failures = [], []
         for record_id in dict.fromkeys(record_ids):
             try:
-                results.append(self.assess(self.store.record(record_id)))
+                evidence = self.assess(self.store.record(record_id))
+                case = self.store.save_case(evidence) if hasattr(self.store, "save_case") else None
+                results.append({**evidence, "case_id": case["case_id"] if case else None})
             except (KeyError, ValueError, FileNotFoundError) as error:
                 failures.append({"record_id": record_id, "error": str(error)})
         return {

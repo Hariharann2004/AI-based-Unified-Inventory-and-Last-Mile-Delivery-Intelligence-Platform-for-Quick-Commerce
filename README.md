@@ -33,7 +33,7 @@ The current decision policy evaluates only the warehouse already assigned to an 
 
 ### Implemented
 
-- Offline training of four LightGBM models from the included CSV datasets.
+- Offline training of four LightGBM models from separately obtained CSV datasets.
 - Consistent categorical encoding for training and inference.
 - Single-record inventory prediction.
 - Single-record delivery prediction.
@@ -41,19 +41,18 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - A unified decision endpoint combining inventory and optional delivery results.
 - A Flask REST API.
 - A React demonstration dashboard.
-- Stored model artifacts and evaluation metrics.
+- Checksum-pinned external datasets/model artifacts and tracked evaluation metrics.
 
 ### Not implemented yet
 
-- Operational database or warehouse-management-system integration.
+- Warehouse-management-system integration.
 - Live order, inventory, GPS, weather, or traffic feeds.
 - User authentication and role-based authorization.
-- Persistent prediction or decision history.
 - Purchase-order creation or supplier integration.
 - Warehouse reassignment, stock transfer, rider assignment, or route optimization.
 - Customer notification delivery.
 - Batch prediction endpoints.
-- Automated retraining, model registry, drift detection, or production deployment.
+- Automated retraining, a configured remote artifact store, drift detection, or production deployment.
 
 ## Current system architecture
 
@@ -62,9 +61,11 @@ flowchart TB
     subgraph Training["Offline model-training pipeline"]
         ICSV["Inventory CSV<br/>91,250 rows"]
         DCSV["Delivery CSV<br/>25,000 rows"]
-        TRAIN["train_models.py<br/>validation, feature preparation,<br/>train/test splitting"]
-        ENCODE["Pandas preprocessing<br/>calendar features + one-hot encoding"]
+        TRAIN["TrainingPipeline<br/>validation + train/test splitting"]
+        FEATURES["Feature modules<br/>inventory + delivery preparation"]
+        ENCODE["LightGBMArtifact<br/>consistent one-hot encoding"]
         LGBM["LightGBM training"]
+        REGISTRY["File model registry<br/>artifact + traceable metadata"]
         DM["Demand regression model"]
         SM["Stockout classification model"]
         EM["ETA regression model"]
@@ -73,11 +74,12 @@ flowchart TB
 
         ICSV --> TRAIN
         DCSV --> TRAIN
-        TRAIN --> ENCODE --> LGBM
-        LGBM --> DM
-        LGBM --> SM
-        LGBM --> EM
-        LGBM --> LM
+        TRAIN --> FEATURES --> ENCODE --> LGBM
+        LGBM --> REGISTRY
+        REGISTRY --> DM
+        REGISTRY --> SM
+        REGISTRY --> EM
+        REGISTRY --> LM
         LGBM --> METRICS
     end
 
@@ -85,21 +87,24 @@ flowchart TB
         USER["Operator / demo user"]
         REACT["React dashboard<br/>hard-coded demonstration input"]
         API["Flask REST API"]
-        INV["InventoryService"]
-        DEL["DeliveryService"]
-        RULES["Unified decision engine<br/>deterministic business rules"]
+        APP["Application services<br/>model inference orchestration"]
+        DOMAIN["Domain policies<br/>inventory + delivery rules"]
+        RULES["Unified decision policy<br/>deterministic business rules"]
+        DB["SQLite decision history<br/>repository adapter"]
+        EVENTS["Operational event port<br/>logging adapter"]
         RESPONSE["Combined JSON result<br/>predictions, scores, priority,<br/>recommended actions"]
 
         USER --> REACT
         REACT -->|"POST /api/decision/unified"| API
-        API --> INV
-        API --> DEL
-        DM --> INV
-        SM --> INV
-        EM --> DEL
-        LM --> DEL
-        INV --> RULES
-        DEL --> RULES
+        API --> APP
+        DM --> APP
+        SM --> APP
+        EM --> APP
+        LM --> APP
+        APP --> DOMAIN
+        DOMAIN --> RULES
+        RULES --> DB
+        RULES --> EVENTS
         RULES --> RESPONSE
         RESPONSE --> REACT
     end
@@ -107,23 +112,29 @@ flowchart TB
 
 The project has two distinct lifecycles:
 
-- **Training:** CSV data is processed manually to create four version-independent `.joblib` artifacts and a metrics report.
-- **Inference:** Flask loads those artifacts and evaluates one submitted inventory/delivery record at a time.
+- **Training:** Dedicated feature, evaluation, training, and registry modules create four `.joblib` artifacts, per-model metadata, and a metrics report.
+- **Inference:** Application services load the artifacts, invoke pure domain policies, and evaluate one submitted inventory/delivery record at a time.
 
 ## Project structure
 
 ```text
-data/raw/                 Source inventory and delivery CSV datasets
+artifacts/manifest.json   Versioned dataset/model checksums and expected locations
+data/raw/                 Git-ignored source datasets hydrated outside Git
 data/processed/           Optional generated training-ready data
-models/                   Trained LightGBM .joblib artifacts
+models/                   Git-ignored trained LightGBM artifacts
 reports/                  Model evaluation metrics and data notes
-src/train_models.py       End-to-end training pipeline
-src/utils/modeling.py     Shared preprocessing and LightGBM artifact wrapper
-src/inventory/            Inventory inference and business rules
-src/delivery/             Delivery inference and business rules
-src/decision_engine/      Unified operational recommendation rules
-src/api/                  Flask API
+backend/src/unified_intelligence/api/          Flask transport and request schemas
+backend/src/unified_intelligence/application/  Inference use-case orchestration
+backend/src/unified_intelligence/domain/       Pure business entities and policies
+backend/src/unified_intelligence/infrastructure/ Database and integration adapters
+backend/src/unified_intelligence/ml/           Features, evaluation, training, registry
+backend/src/unified_intelligence/utils/        Shared model artifact adapter
+backend/tests/                     Backend unit and API tests
 frontend/                 React and Vite demonstration dashboard
+  src/app/                Application shell and global styles
+  src/features/           Feature-owned UI, hooks, API, and data modules
+  src/shared/             Cross-feature configuration and utilities
+.github/workflows/        Pull-request-only quality gates
 ```
 
 ## Data
@@ -282,28 +293,37 @@ It is a demonstration interface. It does not yet provide editable inputs, wareho
 
 ### Prerequisites
 
-- Python 3.10 or newer from python.org.
+- Python 3.12 or newer from python.org.
 - Node.js and npm.
 
 Verify Python before creating the environment:
 
 ```powershell
-python --version
+py -3.12 --version
 ```
 
-Create and activate a virtual environment, install dependencies, and train the models:
+Create and activate a virtual environment, then install the backend:
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python -m src.train_models
+pip install -r backend/requirements.txt
+cd backend
+pip install --no-deps -e .
 ```
+
+The raw CSVs and trained model binaries are not part of a fresh Git checkout. Place
+`supply_chain_dataset1.csv` and `Quick_Commerce_Delivery_Logistics.csv` in `data/raw/`,
+and the four `.joblib` files named in [`artifacts/manifest.json`](artifacts/manifest.json)
+in `models/`. From `backend/`, run `python -m unified_intelligence.artifacts verify` to
+check their sizes and SHA-256 hashes. Once the CSVs are available, you can create the
+models yourself with `python -m unified_intelligence.train_models` instead of obtaining
+the pre-trained binaries. See the dataset sections above for their required columns.
 
 Start the Flask API:
 
 ```powershell
-python -m flask --app src.api.app run --debug
+python -m flask --app unified_intelligence.api.app run --debug
 ```
 
 Confirm the API at `http://127.0.0.1:5000/health`.
@@ -315,6 +335,41 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Run the local quality gates before opening a pull request:
+
+```powershell
+cd backend
+ruff check src tests
+ruff format --check src tests
+pytest
+
+cd ../frontend
+npm run lint
+npm run format:check
+npm run test:coverage
+npm run build
+```
+
+GitHub Actions runs the same backend and frontend checks only while a pull request is active.
+
+Datasets and trained model binaries are intentionally excluded from Git. If the manifest
+contains HTTPS download URLs, or a compatible artifact server is configured through
+`UID_ARTIFACT_BASE_URL`, run:
+
+```powershell
+cd backend
+python -m unified_intelligence.artifacts sync
+python -m unified_intelligence.artifacts verify
+```
+
+The tracked `artifacts/manifest.json` pins every expected file by path, byte size, and SHA-256.
+The training command can regenerate model files locally when the source datasets are available.
+
+Successful unified decisions are persisted through a `DecisionRepository` port. The default
+SQLite adapter writes to `UID_DATABASE_URL`, and `GET /api/decisions?limit=20` returns recent
+history. A separate event-publisher port currently uses structured application logging and can
+later be replaced by a queue, notification service, WMS, or purchase-order adapter.
 
 ## Current maturity and limitations
 
@@ -328,9 +383,10 @@ Important limitations include:
 4. **`delivery_rating` may be unavailable before delivery.** If it is collected after completion, it should be removed or replaced by a historical rider/partner rating.
 5. **The reorder decision and quantity can conflict.** Inventory below the reorder point can trigger a reorder while the calculated quantity remains zero.
 6. **Evaluation uses a single split.** There is no multi-period backtesting, cross-validation, external validation, or business-impact simulation.
-7. **API validation is basic.** There are no typed request schemas, detailed range checks, authentication, rate limiting, or restricted CORS.
-8. **No automated tests are included.** Unit, API, integration, frontend, and data-quality tests still need to be added.
-9. **There is no feedback loop.** Predictions, actions, and actual outcomes are not persisted for later evaluation or retraining.
+7. **API protection is incomplete.** Typed schemas and restricted CORS are present, but authentication and rate limiting are not implemented.
+8. **Test coverage is still growing.** Unit, API smoke, and frontend tests are present; broader integration and data-quality suites are still needed.
+9. **The feedback loop is incomplete.** Unified decisions are saved in SQLite, but actual
+   demand, stockout, and delivery outcomes are not collected for later evaluation or retraining.
 
 ## Future architecture
 

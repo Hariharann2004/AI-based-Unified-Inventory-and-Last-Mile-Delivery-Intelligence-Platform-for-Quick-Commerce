@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "name": "delivery-logistics-source",
+      "kind": "dataset",
+      "path": "data/raw/Quick_Commerce_Delivery_Logistics.csv",
+      "size_bytes": 2863608,
+      "sha256": "875d04cba0b970b6c429c955e218c9844efcd2e95a53cbf92c3ec367e66d0e6d"
+    },
+    {
+      "name": "inventory-source",
+      "kind": "dataset",
+      "path": "data/raw/supply_chain_dataset1.csv",
+      "size_bytes": 6552486,
+      "sha256": "76dad280541a60f135442f3eeb3ef4804a28e48f6a9677f63ddba236ddc80491"
+    },
+    {
+      "name": "delivery-delay-model",
+      "kind": "model",
+      "path": "models/delivery_delay.joblib",
+      "size_bytes": 1041702,
+      "sha256": "4d04632f9fb71c8cea0db94a34027a4dd35a62741673c57fd0c47ca7c7d06ea2"
+    },
+    {
+      "name": "delivery-eta-model",
+      "kind": "model",
+      "path": "models/delivery_eta.joblib",
+      "size_bytes": 860182,
+      "sha256": "117a6dcd8901e3c8412ef8fdb235c19897deb070c43114bf4dbf9490871d9688"
+    },
+    {
+      "name": "inventory-demand-model",
+      "kind": "model",
+      "path": "models/inventory_demand.joblib",
+      "size_bytes": 863292,
+      "sha256": "565dc63fa806dc995159c2a510b5e8a0840aae0c7906aaea06bab7d039541377"
+    },
+    {
+      "name": "inventory-stockout-model",
+      "kind": "model",
+      "path": "models/inventory_stockout.joblib",
+      "size_bytes": 1046102,
+      "sha256": "cdc2c16415ff03247c55b366f6a859d61d146f09a5ebb1494ea9bb27954b4f48"
+    }
+  ]
+}

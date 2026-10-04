@@ -1,0 +1,31 @@
+export const inventoryExample = {
+  Date: "2024-01-01",
+  SKU_ID: "SKU_1",
+  Warehouse_ID: "WH_1",
+  Supplier_ID: "SUP_8",
+  Region: "West",
+  Inventory_Level: 592,
+  Supplier_Lead_Time_Days: 14,
+  Reorder_Point: 379,
+  Order_Quantity: 0,
+  Unit_Cost: 13.95,
+  Unit_Price: 20.48,
+  Promotion_Flag: 0,
+};
+
+export const deliveryExample = {
+  delivery_id: "DEMO-1",
+  delivery_partner: "delhivery",
+  package_type: "grocery",
+  vehicle_type: "Bike",
+  delivery_mode: "Instant",
+  region: "west",
+  weather_condition: "clear",
+  distance_km: 4,
+  package_weight_kg: 2,
+  expected_time_minutes: 20,
+  delivery_rating: 4,
+  Traffic_Level: "Medium",
+  Peak_Hour: "No",
+  Rider_Workload: 1,
+};

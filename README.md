@@ -4,8 +4,10 @@ Software Design and Development Project — Final Year Project 1
 
 ## Project overview
 
-The operations-workbench upgrade is being developed in six feature branches. See
-[implementation phases](docs/implementation-phases.md) for scope and merge order.
+The operations-workbench upgrade is implemented in six dependent feature branches,
+with one commit and PR per phase. The changes are not merged into `main` yet. See
+[implementation phases](docs/implementation-phases.md) for scope and merge order,
+and the [workbench guide](docs/workbench-guide.md) for a review/demo walkthrough.
 The workbench data API can import local datasets with `POST /api/workbench/imports/inventory`
 or `/delivery`, or accept a multipart UTF-8 CSV in the `file` field. Import reports include
 accepted/rejected counts, SHA-256 provenance, and deduplication. Browse imported records at
@@ -49,7 +51,12 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - Rule-based reorder, health, cost, score, and escalation calculations.
 - A unified decision endpoint combining inventory and optional delivery results.
 - A Flask REST API.
-- A React demonstration dashboard.
+- Validated, deduplicated CSV imports and stored, automatically retrieved inputs.
+- Batch analysis with per-record failures, model identities and native feature contributions.
+- Persisted priority cases, internal action drafts and audited approval/dismissal.
+- Step-by-step or automatic historical replay and four labelled stress scenarios.
+- Three held-out evaluation windows/splits per dataset with chart-ready evidence.
+- A responsive React operations workbench: Operations, Cases, Replay and Evaluation.
 - Checksum-pinned external datasets/model artifacts and tracked evaluation metrics.
 
 ### Not implemented yet
@@ -60,7 +67,6 @@ The current decision policy evaluates only the warehouse already assigned to an 
 - Purchase-order creation or supplier integration.
 - Warehouse reassignment, stock transfer, rider assignment, or route optimization.
 - Customer notification delivery.
-- Batch prediction endpoints.
 - Automated retraining, a configured remote artifact store, drift detection, or production deployment.
 
 ## Current system architecture
@@ -94,17 +100,32 @@ flowchart TB
 
     subgraph Runtime["Runtime prediction and decision pipeline"]
         USER["Operator / demo user"]
-        REACT["React dashboard<br/>hard-coded demonstration input"]
+        REACT["React operations workbench<br/>Operations / Cases / Replay / Evaluation"]
         API["Flask REST API"]
         APP["Application services<br/>model inference orchestration"]
         DOMAIN["Domain policies<br/>inventory + delivery rules"]
         RULES["Unified decision policy<br/>deterministic business rules"]
-        DB["SQLite decision history<br/>repository adapter"]
+        DB["SQLite<br/>imports, records, cases, audit,<br/>replays, evaluation reports, decisions"]
+        INGEST["CSV ingestion<br/>validate / deduplicate / provenance"]
+        BATCH["Batch inference + explainable evidence"]
+        REPLAY["Historical replay / labelled stress scenarios"]
+        REVIEW["Case review<br/>internal drafts only"]
+        EVAL["Isolated held-out evaluation<br/>fresh temporary models / charts"]
         EVENTS["Operational event port<br/>logging adapter"]
         RESPONSE["Combined JSON result<br/>predictions, scores, priority,<br/>recommended actions"]
 
         USER --> REACT
-        REACT -->|"POST /api/decision/unified"| API
+        REACT -->|"/api/workbench/*"| API
+        ICSV --> INGEST
+        DCSV --> INGEST
+        API --> INGEST --> DB
+        API --> BATCH --> APP
+        DB --> BATCH
+        API --> REPLAY --> BATCH
+        BATCH --> DB
+        API --> REVIEW --> DB
+        DB --> EVAL
+        API --> EVAL --> DB
         API --> APP
         DM --> APP
         SM --> APP
@@ -122,7 +143,10 @@ flowchart TB
 The project has two distinct lifecycles:
 
 - **Training:** Dedicated feature, evaluation, training, and registry modules create four `.joblib` artifacts, per-model metadata, and a metrics report.
-- **Inference:** Application services load the artifacts, invoke pure domain policies, and evaluate one submitted inventory/delivery record at a time.
+- **Operations:** Stored records feed batch inference, rules, evidence and cases. Replay
+  processes a frozen sequence; stress scenarios alter copies rather than source records.
+- **Evaluation:** Fresh temporary models use held-out data. Reports persist locally;
+  evaluation does not overwrite or automatically promote serving artifacts.
 
 ## Project structure
 
@@ -139,9 +163,10 @@ backend/src/unified_intelligence/infrastructure/ Database and integration adapte
 backend/src/unified_intelligence/ml/           Features, evaluation, training, registry
 backend/src/unified_intelligence/utils/        Shared model artifact adapter
 backend/tests/                     Backend unit and API tests
-frontend/                 React and Vite demonstration dashboard
+frontend/                 React and Vite operations workbench
   src/app/                Application shell and global styles
   src/features/           Feature-owned UI, hooks, API, and data modules
+    workbench/            Operations, case review, replay, charts and evaluation
   src/shared/             Cross-feature configuration and utilities
 .github/workflows/        Pull-request-only quality gates
 ```
@@ -184,7 +209,9 @@ The following outcome or derived fields are excluded from model inputs to reduce
 
 All models use LightGBM with 300 estimators, a learning rate of `0.05`, 31 leaves, and a random state of `42`.
 
-| Model | Task | Target | Reported result |
+These are the original serving-artifact reports, not the newer stricter evaluation:
+
+| Model | Task | Target | Original reported result |
 |---|---|---|---|
 | Inventory demand | Regression | `Units_Sold` | MAE 5.9482; RMSE 7.3956 |
 | Inventory stockout | Binary classification | Derived stockout-risk label | Accuracy 96.30%; ROC AUC 0.9828 |
@@ -192,6 +219,14 @@ All models use LightGBM with 300 estimators, a learning rate of `0.05`, 31 leave
 | Delivery delay | Binary classification | `delayed` | Accuracy 91.92%; ROC AUC 0.9767 |
 
 Inventory demand uses the latest 20% of date-sorted rows as the test set. The remaining models currently use a random 80/20 split; classification is stratified when possible.
+
+The separate workbench evaluation uses three whole-date expanding inventory windows
+and three grouped delivery splits, with validation-only threshold selection. It excludes
+`delivery_rating` from delivery evaluation because pre-delivery availability is unverified.
+Latest inventory window: demand MAE **4.7815**, stockout precision **0.5000**, recall
+**0.3262**, F1 **0.3948**. Delivery without rating: ETA MAE **3.2681–3.3102 minutes**,
+delay ROC-AUC **0.6170–0.6407** across three splits. Inspect all windows; these results
+do not prove production readiness. See [evaluation methodology](docs/evaluation-methodology.md).
 
 ### Feature preparation
 
@@ -214,13 +249,17 @@ required_stock = predicted_daily_demand × supplier_lead_time × 1.15
 ### Recommended reorder quantity
 
 ```text
-recommended_reorder_quantity = max(0, ceil(required_stock - current_inventory))
+recommended_reorder_quantity = max(0, ceil(max(required_stock, reorder_point + 1) - current_inventory))
 ```
 
 A reorder is requested when either:
 
 - Current inventory is at or below `Reorder_Point`, or
 - Stockout probability is at least 70%.
+
+The quantity is returned only when reorder is required. High predicted risk with adequate
+calculated coverage and zero quantity produces a stock-risk review draft, not a zero-unit
+purchase order.
 
 Risk labels are:
 
@@ -262,6 +301,10 @@ The decision engine combines the two service results without training another mo
 
 The response always includes `assigned_warehouse_only: true`. The current system never selects another warehouse.
 
+Action wording describes recommendations only. Neither the legacy endpoint nor the
+workbench sends notifications or executes purchases. Inventory and delivery source CSVs
+are independent; a combined stress case requires an explicitly labelled simulated mapping.
+
 ## API
 
 | Method | Route | Purpose |
@@ -270,6 +313,16 @@ The response always includes `assigned_warehouse_only: true`. The current system
 | `POST` | `/api/inventory/predict` | Inventory prediction and inventory rules |
 | `POST` | `/api/delivery/predict` | Delivery prediction and delivery rules |
 | `POST` | `/api/decision/unified` | Inventory, optional delivery, and unified decision |
+| `GET` | `/api/decisions` | Legacy decision history |
+| `GET`, `POST` | `/api/workbench/imports`, `/imports/<kind>` | List/import datasets |
+| `GET` | `/api/workbench/records/<kind>`, `/record/<id>` | Stored inputs, pagination and exact warehouse/SKU filters |
+| `POST` | `/api/workbench/batches` | Analyze 1–100 record IDs; persist cases |
+| `GET` | `/api/workbench/cases`, `/cases/<id>` | Priority queue and evidence/audit |
+| `POST` | `/api/workbench/cases/<id>/actions` | Approve/dismiss internal drafts |
+| `POST`, `GET` | `/api/workbench/replays`, `/replays/<id>` | Start/read a frozen record sequence |
+| `POST` | `/api/workbench/replays/<id>/steps` | Advance with expected-cursor concurrency protection |
+| `GET`, `POST` | `/api/workbench/scenarios` | List/run labelled stress presets |
+| `POST`, `GET` | `/api/workbench/evaluations`, `/evaluations/<id>` | Start/read local held-out jobs and reports |
 
 The model services are initialized lazily on their first request.
 
@@ -294,9 +347,16 @@ The model services are initialized lazily on their first request.
 
 ## Frontend
 
-The React dashboard currently provides one **Run demo decision** action. It sends hard-coded inventory and delivery examples to the unified endpoint and displays inventory, delivery, and combined-decision cards.
+The default application is an operations workbench, not the old three-card demo.
+Operators import a dataset once, select/filter stored records, and process them without
+typing ML features. Historical replay retrieves and processes records automatically.
+Case evidence shows predictions, rules, model contributions, stock/time comparison charts,
+warnings and an audit trail. Evaluation is separate, with actual/predicted plots, confusion
+matrices, precision-recall and calibration charts, and segment metrics.
 
-It is a demonstration interface. It does not yet provide editable inputs, warehouse or SKU selection, record history, filtering, authentication, or operational workflow actions.
+The interface includes responsive layouts, semantic tables, accessible chart descriptions,
+error/empty states and draft review controls. Reviewer labels are not authenticated accounts.
+The original demo feature remains in the source as a tested baseline but is not the app entry.
 
 ## Running the project in VS Code
 
@@ -337,13 +397,18 @@ python -m flask --app unified_intelligence.api.app run --debug
 
 Confirm the API at `http://127.0.0.1:5000/health`.
 
-In a second terminal, start the dashboard:
+In a second terminal, from the repository root, start the workbench:
 
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
+
+Open `http://localhost:5173/`. Import both local datasets in Operations, analyze records,
+then use Cases, Replay and Model evaluation. Imports/reports persist in local SQLite.
+Use `VITE_API_BASE_URL` and `UID_CORS_ORIGINS` when changing development ports.
+Do not expose this unauthenticated research API publicly.
 
 Run the local quality gates before opening a pull request:
 
@@ -382,18 +447,19 @@ later be replaced by a queue, notification service, WMS, or purchase-order adapt
 
 ## Current maturity and limitations
 
-This repository should be treated as **Version 0: an offline-trained, single-record prediction prototype with a demonstration UI**.
+This feature stack is a **local, dataset-backed decision-support workbench**, not a
+production deployment. It replaces the demo interaction while preserving its serving models.
 
 Important limitations include:
 
 1. **Demand forecasting is currently tabular prediction.** It does not use lagged sales, rolling demand, holidays, pending purchase orders, or richer time-series signals.
 2. **The stockout target is synthetic.** The classifier learns a label derived from a formula rather than actual fulfilment failures or lost sales.
-3. **Accuracy alone is insufficient for the imbalanced stockout target.** Precision, recall, F1, confusion matrices, and probability calibration should be added.
+3. **Accuracy alone is insufficient for the imbalanced stockout target.** The new evaluation reports precision, recall, F1, confusion matrices and calibration; performance varies considerably across periods.
 4. **`delivery_rating` may be unavailable before delivery.** If it is collected after completion, it should be removed or replaced by a historical rider/partner rating.
-5. **The reorder decision and quantity can conflict.** Inventory below the reorder point can trigger a reorder while the calculated quantity remains zero.
-6. **Evaluation uses a single split.** There is no multi-period backtesting, cross-validation, external validation, or business-impact simulation.
+5. **Rules are illustrative.** Reorder quantities cover the reorder point and predicted coverage, but supplier minimums, pending orders and operational costs are not modelled.
+6. **Evaluation is not external validation.** Three inventory windows and delivery group splits are implemented; delivery replay has source-row ordering, not verified chronological timing. Stress scenarios demonstrate behaviour, not accuracy or real business impact.
 7. **API protection is incomplete.** Typed schemas and restricted CORS are present, but authentication and rate limiting are not implemented.
-8. **Test coverage is still growing.** Unit, API smoke, and frontend tests are present; broader integration and data-quality suites are still needed.
+8. **Runtime is local and single-process.** SQLite and a bounded in-process evaluation worker are not a distributed platform. Interrupted evaluation jobs are marked failed and must be rerun.
 9. **The feedback loop is incomplete.** Unified decisions are saved in SQLite, but actual
    demand, stockout, and delivery outcomes are not collected for later evaluation or retraining.
 
@@ -427,7 +493,7 @@ flowchart TB
         API["Authenticated API"]
         DECISION["Configurable decision engine"]
         WORKFLOW["Reorder, alert, and escalation workflows"]
-        UI["Role-based operations dashboard"]
+        UI["Authenticated operations workbench"]
     end
 
     SOURCES_OUT["Actual demand, stockout,<br/>ETA, and delay outcomes"]
@@ -449,54 +515,22 @@ flowchart TB
     SOURCES_OUT --> MONITOR --> TRAIN
 ```
 
-## Recommended roadmap
+## Implemented phases and next milestones
 
-### Phase 1 — Reproducible baseline
+The six implemented phases are data ingestion, explainable batch predictions, case
+workflows, replay/scenarios, held-out evaluation and the workbench interface. Their PRs
+are dependent: review and merge in phase order, retargeting the next PR to `main` after
+its predecessor merges. No phase is automatically merged or branch automatically deleted.
 
-- Pin dependency versions.
-- Verify all four artifacts can be loaded in a fresh environment.
-- Correct and verify development and production frontend scripts.
-- Add typed API schemas and consistent error responses.
-- Add unit and API smoke tests.
-- Record model-training metadata and package versions.
+Future work, requiring new scope and evidence:
 
-### Phase 2 — Model validity
+- Replace derived stockout labels with observed failures; add lagged/rolling demand features.
+- Remove or replace post-delivery ratings in serving models, validate on held-out outcomes,
+  and explicitly approve promotion of improved artifacts.
+- Add verified order IDs and timestamps before connecting inventory and delivery datasets.
+- Integrate real operational feeds and outcomes; keep external action execution opt-in.
+- Add authentication, authorization, rate limits and an authenticated audit identity.
+- Add durable jobs, deployment, monitoring, drift checks and rollback for production use.
 
-- Add lagged demand, rolling averages, trends, holidays, and promotion history.
-- Replace the derived stockout label with real operational outcomes when available.
-- Verify whether delivery rating is a legitimate pre-delivery feature.
-- Use time-based backtesting where appropriate.
-- Add precision, recall, F1, calibration, and segment-level evaluation.
-- Tune action thresholds using operational costs.
-
-### Phase 3 — Usable application
-
-- Replace hard-coded examples with validated input forms.
-- Add SKU, warehouse, order, and delivery selection.
-- Explain the factors and rules behind each recommendation.
-- Add batch input, risk queues, decision history, and user overrides.
-- Persist predictions, actions, and outcomes.
-
-### Phase 4 — Operational integration
-
-- Connect order, inventory, supplier, and delivery systems.
-- Create purchase-order drafts and alert workflows.
-- Integrate customer ETA notifications and rider-support escalation.
-- Add warehouse-transfer logic only if the assigned-warehouse policy changes.
-
-### Phase 5 — Production and MLOps
-
-- Add authentication, authorization, configuration management, and restricted CORS.
-- Containerize and deploy the services.
-- Add CI/CD, structured logging, tracing, and monitoring.
-- Version models and support rollback.
-- Monitor data quality, drift, prediction accuracy, and business outcomes.
-- Retrain only when sufficient validated outcome data is available.
-
-## Reference point for continued development
-
-The next recommended milestone is:
-
-> **Version 1: a reproducible and tested local application where users can enter inventory and delivery data, receive validated predictions, and save the resulting operational decision.**
-
-Development should first stabilize the existing pipeline and its tests, then improve model validity, then add operational integrations. This preserves the current working proof of concept as a clear baseline while the platform grows.
+Use the [workbench guide](docs/workbench-guide.md) as the reference point for continued
+development and the final-review walkthrough. CI remains pull-request-only.

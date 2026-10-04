@@ -99,11 +99,15 @@ class WorkbenchStore:
             "outcomes": json.loads(row["outcomes"]),
         }
 
-    def records(self, kind, *, import_id=None, limit=50, offset=0):
+    def records(self, kind, *, import_id=None, limit=50, offset=0, warehouse=None, sku=None):
         where, parameters = "kind=?", [kind]
         if import_id:
             where += " AND import_id=?"
             parameters.append(import_id)
+        for field, value in [("Warehouse_ID", warehouse), ("SKU_ID", sku)]:
+            if value:
+                where += " AND json_extract(inputs, ?) = ?"
+                parameters.extend(["$." + field, value])
         with self.connection() as connection:
             count = connection.execute(
                 f"SELECT count(*) FROM operational_records WHERE {where}",

@@ -10,6 +10,7 @@ from unified_intelligence.ml.evaluation.workbench import WorkbenchEvaluator
 
 EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="uid-evaluation")
 ADMISSION = threading.BoundedSemaphore(1)
+WORKER_ID = str(uuid.uuid4())
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS evaluations (
  evaluation_id TEXT PRIMARY KEY, created_at TEXT NOT NULL, payload TEXT NOT NULL
@@ -40,7 +41,7 @@ class EvaluationService:
             rows = connection.execute(
                 "SELECT payload FROM evaluations ORDER BY created_at DESC LIMIT 20"
             ).fetchall()
-        return [json.loads(row["payload"]) for row in rows]
+        return [self.recover(json.loads(row["payload"])) for row in rows]
 
     def get(self, evaluation_id):
         with self.store.connection() as connection:
@@ -50,7 +51,21 @@ class EvaluationService:
             ).fetchone()
         if row is None:
             raise KeyError("Evaluation report not found.")
-        return json.loads(row["payload"])
+        return self.recover(json.loads(row["payload"]))
+
+    def recover(self, report):
+        if (
+            report["status"] == "running"
+            and report.get("worker_id")
+            and report["worker_id"] != WORKER_ID
+        ):
+            report = {
+                **report,
+                "status": "failed",
+                "error": "Worker restarted; evaluation interrupted. Rerun explicitly.",
+            }
+            self.save(report)
+        return report
 
     def execute(self, report):
         try:
@@ -87,6 +102,7 @@ class EvaluationService:
             "evaluation_id": str(uuid.uuid4()),
             "created_at": now(),
             "status": "running",
+            "worker_id": WORKER_ID,
             "kind": kind,
             "import_id": import_id,
             "data_fingerprint": imported["fingerprint"],

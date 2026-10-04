@@ -112,6 +112,11 @@ def test_workbench_import_api(client, monkeypatch, work_store):
     assert client.get(f"/api/workbench/record/{record['record_id']}").status_code == 200
     assert client.get("/api/workbench/record/missing").status_code == 404
     assert client.get("/api/workbench/records/unknown").status_code == 400
+    assert (
+        client.get("/api/workbench/records/inventory?warehouse=WH_1&sku=SKU_1").get_json()["total"]
+        == 1
+    )
+    assert client.get("/api/workbench/records/inventory?warehouse=missing").get_json()["total"] == 0
 
 
 def test_local_import_api_and_missing_artifacts(client, monkeypatch, work_store, tmp_path):

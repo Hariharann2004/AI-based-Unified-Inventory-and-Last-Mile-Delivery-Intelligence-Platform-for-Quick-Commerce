@@ -51,6 +51,12 @@ the [results explanation](delivery-research-results.md) records the modest measu
 performance and the decision not to promote either research model. This does not
 complete the future operational integration or UI/export phases.
 
+Phase 7 is on `feature/full-import-processing`: a full-import background job with
+per-record checkpoints, progress, cooperative cancellation, explicit failed retries,
+lease-based restart recovery and pinned source/model versions. Operations exposes
+the controls without removing visible-page processing. See the
+[full-import guide](full-import-processing.md). Phases 8–9 are next.
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

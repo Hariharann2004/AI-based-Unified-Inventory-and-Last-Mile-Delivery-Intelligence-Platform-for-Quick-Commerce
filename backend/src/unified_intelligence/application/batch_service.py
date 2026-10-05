@@ -9,6 +9,11 @@ from unified_intelligence.application.ingestion_service import MODELS
 from unified_intelligence.domain.decisions import UnifiedDecisionPolicy
 from unified_intelligence.ml.features.inventory import prepare_inventory_features
 
+MODEL_NAMES = {
+    "inventory": {"demand": "inventory_demand", "stockout": "inventory_stockout"},
+    "delivery": {"eta": "delivery_eta", "delay": "delivery_delay"},
+}
+
 
 def contribution(model, frame):
     if not hasattr(model, "explain"):
@@ -30,12 +35,30 @@ class BatchService:
         self.inventory_factory = inventory_factory
         self.delivery_factory = delivery_factory
         self.model_directory = model_directory
+        self.pinned_services = {}
+        self.pinned_models = {}
+
+    def snapshot(self, kind):
+        return {
+            name: identity(self.model_directory / (filename + ".joblib"))
+            for name, filename in MODEL_NAMES[kind].items()
+        }
+
+    def pin(self, kind):
+        """Load independent worker models once and verify files did not change during loading."""
+        before = self.snapshot(kind)
+        factory = self.inventory_factory if kind == "inventory" else self.delivery_factory
+        service = factory()
+        if before != self.snapshot(kind):
+            raise ValueError("Model files changed during loading; retry with stable artifacts.")
+        self.pinned_services[kind], self.pinned_models[kind] = service, before
+        return before
 
     def assess(self, record):
         inputs, kind = record["inputs"], record["kind"]
         inputs = MODELS[kind].model_validate(inputs).model_dump(by_alias=True, mode="json")
         if kind == "inventory":
-            service = self.inventory_factory()
+            service = self.pinned_services.get(kind) or self.inventory_factory()
             assessment = service.predict(inputs)
             frame = prepare_inventory_features(pd.DataFrame([inputs]))
             models = {"demand": service.demand_model, "stockout": service.stockout_model}
@@ -53,9 +76,8 @@ class BatchService:
             }
             decision = UnifiedDecisionPolicy().evaluate(assessment).to_dict()
             warnings = ["Stockout risk uses a derived label, not observed fulfilment failures."]
-            names = {"demand": "inventory_demand", "stockout": "inventory_stockout"}
         else:
-            service = self.delivery_factory()
+            service = self.pinned_services.get(kind) or self.delivery_factory()
             assessment = service.predict(inputs)
             frame = pd.DataFrame([inputs])
             models = {"eta": service.eta_model, "delay": service.delay_model}
@@ -74,7 +96,6 @@ class BatchService:
                 "recommendation": assessment["recommendation"],
             }
             warnings = ["delivery_rating provenance is unverified; this is retrospective analysis."]
-            names = {"eta": "delivery_eta", "delay": "delivery_delay"}
         return {
             "record_id": record["record_id"],
             "import_id": record["import_id"],
@@ -84,9 +105,7 @@ class BatchService:
             "decision": decision,
             "calculations": calculations,
             "explanations": {name: contribution(model, frame) for name, model in models.items()},
-            "models": {
-                name: identity(self.model_directory / (names[name] + ".joblib")) for name in models
-            },
+            "models": self.pinned_models.get(kind) or self.snapshot(kind),
             "warnings": warnings,
             "provenance": "historical_dataset",
             "order_linkage": "independent_dataset",

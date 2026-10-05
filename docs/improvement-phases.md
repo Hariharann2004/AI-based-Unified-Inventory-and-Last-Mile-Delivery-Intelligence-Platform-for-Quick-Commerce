@@ -35,6 +35,11 @@ Phase 4 is on `feature/delivery-research-features`: allowlisted order-creation i
 train-only categorical vocabularies, explicit missingness and opt-in load ablation.
 No outcome columns or whole-dataset imputations enter the feature builder.
 
+Phase 5 is on `feature/delivery-research-training`: isolated LightGBM candidates,
+chronological whole-date partitions with outcome-availability purging, validation-only
+selection and held-out ETA metrics against constant baselines. Serving promotion is
+not part of this phase.
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

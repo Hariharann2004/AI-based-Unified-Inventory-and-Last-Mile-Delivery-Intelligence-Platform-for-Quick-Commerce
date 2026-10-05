@@ -1,0 +1,41 @@
+{
+  "dataset_id": "porter-kaggle-v1",
+  "source_url": "https://www.kaggle.com/datasets/ranitsarkar01/porter-delivery-time-estimation",
+  "license_as_listed": "CC BY-NC 4.0",
+  "csv_sha256": "5a0de56a9c968ee02189e7dced4e29124a93a36c7b6d5f1d0e79ac88e565356f",
+  "rows": 197428,
+  "eligible_observed_targets": 197421,
+  "rejected_observed_targets": 7,
+  "invalid_creation_timestamps": 0,
+  "invalid_completion_timestamps": 7,
+  "nonpositive_elapsed_rows": 0,
+  "duplicate_rows_beyond_first": 0,
+  "missing_cells_by_column": {
+    "market_id": 987,
+    "created_at": 0,
+    "actual_delivery_time": 7,
+    "store_id": 0,
+    "store_primary_category": 4760,
+    "order_protocol": 995,
+    "total_items": 0,
+    "subtotal": 0,
+    "num_distinct_items": 0,
+    "min_item_price": 0,
+    "max_item_price": 0,
+    "total_onshift_partners": 16262,
+    "total_busy_partners": 16262,
+    "total_outstanding_orders": 16262
+  },
+  "observed_duration_minutes": {
+    "median": 44.333333333333336,
+    "maximum": 141947.65,
+    "over_180_minutes": 138,
+    "extreme_duration_policy": "Retain finite positive durations; no clipping/removal."
+  },
+  "timezone_status": "Unverified; naive timestamps use a common source-clock reference.",
+  "target": "Elapsed order-creation to delivery-completion minutes, including waiting/prep.",
+  "promised_deadline_available": false,
+  "original_business_provenance": "unverified",
+  "operational_database_modified": false,
+  "serving_models_modified": false
+}

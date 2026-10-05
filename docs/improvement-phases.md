@@ -26,6 +26,11 @@ Phase 2 is on `feature/delivery-dataset-selection`. The user approved the
 on 2026-10-05. Its versioned source manifest is tracked; the raw download is not.
 The approval is not permission to replace the serving model or invent delay labels.
 
+Phase 3 research ingestion is on `feature/delivery-research-ingestion`: a
+checksum-verified loader separates order inputs from completion outcomes, reports
+invalid targets and retains extreme durations. It is deliberately separate from the
+operational import/model contract. See the [research guide](delivery-research-guide.md).
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

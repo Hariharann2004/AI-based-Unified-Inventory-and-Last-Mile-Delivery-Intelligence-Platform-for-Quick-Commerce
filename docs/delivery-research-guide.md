@@ -40,3 +40,20 @@ deadline exists. No serving model is replaced or promoted by source inspection.
 
 Safe feature construction, chronological training and comparative evaluation are
 subsequent phases. A new source is not proof that model performance has improved.
+
+## Prediction-time features
+
+The research feature builder allowlists order/store/category fields and source-clock
+calendar values. It cannot accidentally include completion timestamps, elapsed time,
+ratings or a delay flag even if a caller adds those columns. Invalid numeric inputs
+become missing rather than zero. LightGBM handles numeric missingness natively.
+
+Categorical vocabularies are fitted on training inputs only; unknown categories in
+validation/test become missing. Native categories avoid allocating a large dense
+one-hot matrix for thousands of stores. No whole-dataset mean imputation is used.
+
+Fleet/load fields and two workload ratios require `include_load=True`; they are
+excluded by default because their snapshot collection timing is unverified. Any
+load-inclusive comparison must retain an explicit availability warning and an
+order-only reference. Calendar fields use source-clock time, not verified local
+peak-hour labels. Training/test protocols are implemented in the following phases.

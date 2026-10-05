@@ -3,6 +3,7 @@ import { request } from "../api/client.js";
 import { ConfusionMatrix, EvidencePlot } from "../components/EvidenceCharts.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { EvaluationInterpretation } from "../components/EvaluationInterpretation.jsx";
+import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 import { ResearchBenchmarkPage } from "./ResearchBenchmarkPage.jsx";
 
@@ -17,7 +18,8 @@ export function EvaluationPage({ imports, version, refresh }) {
   const remote = useRemote("/evaluations", version);
   const task = useTask();
   const reports = (remote.data || []).filter((item) => item.import_id === selected?.import_id);
-  const report = reports.find((item) => item.status === "completed")?.report;
+  const completed = reports.find((item) => item.status === "completed");
+  const report = completed?.report;
   const current = report?.windows[windowIndex] || report?.windows.at(-1);
   const running = (remote.data || []).some((item) => item.status === "running");
   useEffect(() => {
@@ -38,7 +40,9 @@ export function EvaluationPage({ imports, version, refresh }) {
           <p className="eyebrow">04 / Evidence, independently measured</p>
           <h1>Model evaluation</h1>
           <p className="muted">
-            Fresh temporary models. Held-out outcomes. Serving models remain unchanged.
+            {mode === "research"
+              ? "Saved, separate ETA research evidence. Serving models remain unchanged."
+              : "Fresh temporary models. Held-out outcomes. Serving models remain unchanged."}
           </p>
         </div>
         <span className="mode-label">LightGBM only</span>
@@ -145,6 +149,10 @@ export function EvaluationPage({ imports, version, refresh }) {
                 {current.classification.threshold}
               </p>
               <EvaluationInterpretation current={current} report={report} kind={kind} />
+              <ExportButtons
+                path={`/evaluations/${completed.evaluation_id}`}
+                filename={`evaluation-${completed.evaluation_id}`}
+              />
               <div className="chart-grid">
                 <EvidencePlot
                   title="Actual versus predicted · sampled test records"

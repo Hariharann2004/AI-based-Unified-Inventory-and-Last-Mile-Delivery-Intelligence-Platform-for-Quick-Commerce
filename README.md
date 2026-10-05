@@ -552,3 +552,19 @@ approved, checksum-pinned Kaggle dataset without changing the original operation
 models. Run `python -m unified_intelligence.benchmark_delivery --all-windows --output reports/eta-local.json`
 for chronological, validation-tuned LightGBM evidence. The dataset has no recorded
 promised deadline, so this benchmark reports ETA errors rather than delay accuracy.
+
+The remaining improvement features are now implemented on separate dependent PRs:
+
+- [Full-import processing](docs/full-import-processing.md): one click processes the
+  entire selected operational import with progress, cancel/resume and failed retries.
+  The visible 20-record option remains available. Processing is inference, not training.
+- [Evaluation evidence](docs/evaluation-interface.md): clear risk/ETA metric meanings,
+  training-only baselines, threshold warnings, all-window comparisons and a separate
+  saved Porter ETA research view. Research evidence is not a promoted serving model.
+- [Guide-review downloads](docs/evidence-export.md): full JSON and offline printable
+  HTML with charts, source provenance, report checksums and honest limitations.
+
+Restart the backend and frontend after switching to the latest feature branch.
+No branches/PRs are automatically merged or deleted; CI remains PR-only. All four
+serving artifacts and the original operational datasets are unchanged. The final
+project document will be prepared separately after these features are reviewed.

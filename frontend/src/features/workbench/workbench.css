@@ -558,6 +558,14 @@
 }
 .workbench .processing-panel .section-heading {
   margin-top: 0;
+  flex-wrap: wrap;
+}
+.workbench .processing-panel .section-heading > div {
+  flex: 1 1 340px;
+}
+.workbench .processing-panel .section-heading > button {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .workbench .processing-progress progress {
   width: 100%;

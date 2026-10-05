@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from types import SimpleNamespace
 
 import numpy as np
@@ -10,6 +11,7 @@ from unified_intelligence.ml.evaluation.research_delivery import (
     chronological_partition,
     eta_metrics,
     run_research_window,
+    summarize_research_windows,
     train_candidate,
 )
 from unified_intelligence.ml.features.research_delivery import (
@@ -87,6 +89,10 @@ def test_candidates_only_see_training_and_validation_before_selected_test(resear
     assert test_calls == [("predict", "regularized", list(range(48, 60)))]
     assert calls[-1] == test_calls[0]
     assert report["include_load"] is False
+    assert report["test_cases"]["unseen_store"]["rows"] == 0
+    assert report["test_cases"]["unseen_store"]["model"] is None
+    assert report["test_cases"]["seen_store"]["rows"] == 12
+    assert sum(item["rows"] for item in report["absolute_error_histogram"]) == 12
     assert report["partition"]["counts"] == {"train": 36, "validation": 12, "test": 12}
     assert len(report["partition"]["source_row_index_sha256"]["test"]) == 64
     json.dumps(report, allow_nan=False)
@@ -134,7 +140,11 @@ def test_benchmark_cli_save_and_warning(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(
         benchmark_delivery,
         "run_research_window",
-        lambda *args, **kwargs: {"include_load": kwargs["include_load"]},
+        lambda *args, **kwargs: {
+            "include_load": kwargs["include_load"],
+            "test": {"mae_minutes": 1},
+            "baselines": {"training_median": {"mae_minutes": 2}},
+        },
     )
     output = tmp_path / "report.json"
     assert benchmark_delivery.main(["--include-load", "--output", str(output)]) == 0
@@ -147,3 +157,55 @@ def test_benchmark_cli_load_error_is_clear(tmp_path, capsys):
         benchmark_delivery.main(["--manifest", str(tmp_path / "missing.json")])
     assert error.value.code == 1
     assert "Research benchmark failed" in capsys.readouterr().err
+
+
+def test_three_window_comparison_is_predeclared_and_does_not_pretend_independent(
+    monkeypatch, capsys
+):
+    calls = []
+
+    def window(dataset, *, fraction, include_load):
+        calls.append((fraction, include_load))
+        return {
+            "include_load": include_load,
+            "test": {"mae_minutes": 1 if include_load else 3},
+            "baselines": {"training_median": {"mae_minutes": 2}},
+        }
+
+    monkeypatch.setattr(
+        benchmark_delivery, "load_research_delivery", lambda *args: SimpleNamespace(audit={})
+    )
+    monkeypatch.setattr(benchmark_delivery, "run_research_window", window)
+    assert benchmark_delivery.main(["--all-windows", "--compare-load"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert calls == [
+        (0.6, False),
+        (0.8, False),
+        (1.0, False),
+        (0.6, True),
+        (0.8, True),
+        (1.0, True),
+    ]
+    variants = report["summary"]["variants"]
+    assert variants["order_only"]["windows_beating_training_median_mae"] == 0
+    assert variants["load_snapshot_assumption"]["windows_beating_training_median_mae"] == 3
+    assert "not independent" in report["summary"]["interpretation"]
+    assert summarize_research_windows([])["variants"] == {}
+
+
+def test_extreme_test_outcome_is_retained_and_reported(research_dataset):
+    research_dataset.elapsed_minutes.iloc[-1] = 5000
+    research_dataset.completed_at.iloc[-1] = research_dataset.created_at.iloc[
+        -1
+    ].to_pydatetime() + timedelta(minutes=5000)
+
+    class ConstantModel:
+        def predict(self, features):
+            return np.full(len(features), 30.0)
+
+    report = run_research_window(research_dataset, trainer=lambda *args: ConstantModel())
+    assert report["test_outcomes_over_180_minutes"] == 1
+    extreme = report["test_cases"]["observed_duration_over_180_minutes"]["model"]
+    assert extreme["mae_minutes"] == 4970
+    assert report["test"]["rows"] == 12
+    assert report["test"]["mae_minutes"] > 400

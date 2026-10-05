@@ -40,6 +40,17 @@ chronological whole-date partitions with outcome-availability purging, validatio
 selection and held-out ETA metrics against constant baselines. Serving promotion is
 not part of this phase.
 
+Phase 6 is on `feature/delivery-research-comparison`: three expanding chronological
+windows, order-only/load-assumption comparisons, constant baselines, overlapping
+diagnostic cases and complete test error histograms. This is an offline research
+benchmark, not yet a new screen in the Operations interface. No serving promotion
+is automatic; phases 7–9 remain the full-import/UI/export work.
+
+The first full-source comparison is saved in `reports/porter_eta_benchmark.json`;
+the [results explanation](delivery-research-results.md) records the modest measured
+performance and the decision not to promote either research model. This does not
+complete the future operational integration or UI/export phases.
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

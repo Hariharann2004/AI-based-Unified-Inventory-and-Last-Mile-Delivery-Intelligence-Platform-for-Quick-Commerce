@@ -88,3 +88,39 @@ same holdout; future model changes need a new documented evaluation protocol/dat
 
 The leakage controls follow [scikit-learn's guidance](https://scikit-learn.org/stable/common_pitfalls.html).
 The bounded complexity configurations follow [LightGBM tuning guidance](https://lightgbm.readthedocs.io/en/stable/Parameters-Tuning.html).
+
+## Multiple periods and case comparisons
+
+```powershell
+python -m unified_intelligence.benchmark_delivery --all-windows --output reports/eta-order-only-local.json
+```
+
+This evaluates three expanding windows ending at 60%, 80% and 100% of the distinct
+source dates. Each window independently uses the same predeclared configurations
+and train/validation/test protocol. Windows overlap: their mean MAE is a descriptive,
+unweighted period summary, not an independent-sample confidence interval.
+
+For an explicitly labelled load-snapshot ablation:
+
+```powershell
+python -m unified_intelligence.benchmark_delivery --all-windows --compare-load --output reports/eta-comparison-local.json
+```
+
+`--compare-load` and `--include-load` are mutually exclusive. The comparison trains
+both order-only and load-inclusive variants. A better load-inclusive score does not
+establish that its inputs are available in a real prediction workflow.
+
+Each test report includes seen/unseen stores, source-clock weekdays/weekends and
+durations at most/over 180 minutes. These cases overlap and are diagnostics, not
+independent populations. Duration cohorts use observed outcomes only for reporting,
+never as features. Empty cases return null metrics; extreme cases remain part of
+the primary score. Absolute-error histogram counts cover the entire test partition;
+the actual/predicted point list is a deterministic sample of at most 100 observations.
+
+No automatic promotion is made even when a variant beats its constant baselines.
+Review origin, timing, deadline semantics and compatibility before changing the
+workbench's operational model/schema.
+
+The [first measured results](delivery-research-results.md) document both useful signal
+and weak periods. Do not treat the new dataset or extra software features as proof
+of improved production accuracy.

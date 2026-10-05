@@ -109,6 +109,32 @@ def run_research_window(dataset, *, fraction=1.0, include_load=False, trainer=tr
     observed = dataset.elapsed_minutes.iloc[test]
     baseline_mean = float(dataset.elapsed_minutes.iloc[train].mean())
     baseline_median = float(dataset.elapsed_minutes.iloc[train].median())
+    known_store = features.iloc[test]["store_id"].isin(encoder.categories["store_id"]).to_numpy()
+    weekday = dataset.created_at.iloc[test].dt.dayofweek.to_numpy() < 5
+    extreme = observed.to_numpy() > 180
+    case_masks = {
+        "seen_store": known_store,
+        "unseen_store": ~known_store,
+        "source_clock_weekday": weekday,
+        "source_clock_weekend": ~weekday,
+        "observed_duration_at_most_180_minutes": ~extreme,
+        "observed_duration_over_180_minutes": extreme,
+    }
+    cases = {
+        name: {
+            "rows": int(mask.sum()),
+            "model": eta_metrics(observed.to_numpy()[mask], predictions[mask])
+            if mask.any()
+            else None,
+            "training_median_baseline": (
+                eta_metrics(observed.to_numpy()[mask], np.full(int(mask.sum()), baseline_median))
+                if mask.any()
+                else None
+            ),
+        }
+        for name, mask in case_masks.items()
+    }
+    errors = np.abs(observed.to_numpy() - predictions)
     return {
         "partition": {
             **partition_metadata,
@@ -146,6 +172,18 @@ def run_research_window(dataset, *, fraction=1.0, include_load=False, trainer=tr
             "training_median": baseline_median,
         },
         "test_outcomes_over_180_minutes": int((observed > 180).sum()),
+        "test_cases": cases,
+        "case_interpretation": "Overlapping cases; duration cohorts use outcomes, not inputs.",
+        "absolute_error_histogram": [
+            {"interval": name, "rows": int(mask.sum())}
+            for name, mask in [
+                ("0_to_5_minutes_inclusive", errors <= 5),
+                ("over_5_to_10_minutes", (errors > 5) & (errors <= 10)),
+                ("over_10_to_20_minutes", (errors > 10) & (errors <= 20)),
+                ("over_20_to_60_minutes", (errors > 20) & (errors <= 60)),
+                ("over_60_minutes", errors > 60),
+            ]
+        ],
         "sampled_test_predictions": [
             {
                 "observed_minutes": float(observed.iloc[i]),
@@ -175,4 +213,30 @@ def research_metadata(dataset):
             "Validation-only tuning; do not retune using results from the same test holdout.",
             "Old ETA scores are not directly comparable across different targets/domains.",
         ],
+    }
+
+
+def summarize_research_windows(windows):
+    """Summarize repeated temporal windows without pretending overlapping tests are independent."""
+    result = {}
+    for include_load in [False, True]:
+        selected = [window for window in windows if window["include_load"] == include_load]
+        if not selected:
+            continue
+        errors = [window["test"]["mae_minutes"] for window in selected]
+        result["load_snapshot_assumption" if include_load else "order_only"] = {
+            "window_count": len(selected),
+            "mean_window_mae_minutes": float(np.mean(errors)),
+            "min_window_mae_minutes": min(errors),
+            "max_window_mae_minutes": max(errors),
+            "windows_beating_training_median_mae": sum(
+                window["test"]["mae_minutes"]
+                < window["baselines"]["training_median"]["mae_minutes"]
+                for window in selected
+            ),
+        }
+    return {
+        "variants": result,
+        "interpretation": "Unweighted summary; overlapping windows are not independent trials.",
+        "promotion_decision": "Not promoted; source and operational compatibility need review.",
     }

@@ -31,6 +31,10 @@ checksum-verified loader separates order inputs from completion outcomes, report
 invalid targets and retains extreme durations. It is deliberately separate from the
 operational import/model contract. See the [research guide](delivery-research-guide.md).
 
+Phase 4 is on `feature/delivery-research-features`: allowlisted order-creation inputs,
+train-only categorical vocabularies, explicit missingness and opt-in load ablation.
+No outcome columns or whole-dataset imputations enter the feature builder.
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

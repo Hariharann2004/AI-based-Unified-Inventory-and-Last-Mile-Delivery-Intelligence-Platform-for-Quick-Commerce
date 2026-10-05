@@ -20,16 +20,27 @@ class ResearchDeliveryDataset:
     audit: dict
 
 
+def default_research_source() -> Path:
+    """Prefer the viewable CSV; retain ZIP compatibility for older local setups."""
+    csv_path = Path("data/raw/Porter_Delivery_Time_Estimation.csv")
+    return csv_path if csv_path.exists() else Path("data/raw/porter_candidate_v1/porter-v1.zip")
+
+
 def load_research_delivery(manifest_path: Path, archive_path: Path) -> ResearchDeliveryDataset:
-    """Read the pinned CSV in memory; never extract, import to SQLite or rewrite data."""
+    """Read the pinned CSV or ZIP in memory; never import to SQLite or rewrite rows."""
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("schema_version") != 1 or manifest.get("dataset_id") != "porter-kaggle-v1":
         raise ValueError("Unsupported research source manifest.")
-    with zipfile.ZipFile(archive_path) as archive:
-        member = archive.getinfo(manifest["csv_member"])
-        if member.file_size != manifest["csv_bytes"]:
+    if archive_path.suffix.lower() == ".csv":
+        if archive_path.stat().st_size != manifest["csv_bytes"]:
             raise ValueError("Research CSV byte size differs from the pinned source.")
-        data = archive.read(member)
+        data = archive_path.read_bytes()
+    else:
+        with zipfile.ZipFile(archive_path) as archive:
+            member = archive.getinfo(manifest["csv_member"])
+            if member.file_size != manifest["csv_bytes"]:
+                raise ValueError("Research CSV byte size differs from the pinned source.")
+            data = archive.read(member)
     digest = hashlib.sha256(data).hexdigest()
     if digest != manifest["csv_sha256"]:
         raise ValueError("Research CSV checksum differs from the pinned source.")

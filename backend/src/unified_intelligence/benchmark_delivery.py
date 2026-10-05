@@ -6,7 +6,10 @@ import sys
 import zipfile
 from pathlib import Path
 
-from unified_intelligence.ml.data_quality.research_delivery import load_research_delivery
+from unified_intelligence.ml.data_quality.research_delivery import (
+    default_research_source,
+    load_research_delivery,
+)
 from unified_intelligence.ml.evaluation.research_delivery import (
     research_metadata,
     run_research_window,
@@ -19,8 +22,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--manifest", type=Path, default=Path("artifacts/delivery-benchmark-source.json")
     )
-    parser.add_argument(
-        "--archive", type=Path, default=Path("data/raw/porter_candidate_v1/porter-v1.zip")
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument("--csv", type=Path, help="Exact, checksum-pinned source CSV.")
+    source_group.add_argument(
+        "--archive", type=Path, help="Original ZIP, as an alternative to CSV."
     )
     load_group = parser.add_mutually_exclusive_group()
     load_group.add_argument(
@@ -39,7 +44,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.output and args.output.exists():
         parser.exit(1, "Research benchmark failed: output already exists; choose a new filename.\n")
     try:
-        dataset = load_research_delivery(args.manifest, args.archive)
+        source = args.csv or args.archive or default_research_source()
+        dataset = load_research_delivery(args.manifest, source)
         if args.include_load or args.compare_load:
             print(
                 "WARNING: load snapshot timing is unverified; this is research only.",

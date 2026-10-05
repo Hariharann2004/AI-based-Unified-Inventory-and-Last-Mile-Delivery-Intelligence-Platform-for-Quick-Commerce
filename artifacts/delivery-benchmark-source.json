@@ -13,6 +13,7 @@
   "monetary_units": "unverified",
   "research_approval": "User approved a separate ETA benchmark on 2026-10-05; existing serving models unchanged",
   "archive_path": "data/raw/porter_candidate_v1/porter-v1.zip",
+  "csv_path": "data/raw/Porter_Delivery_Time_Estimation.csv",
   "csv_member": "dataset.csv",
   "csv_bytes": 23759573,
   "csv_sha256": "5a0de56a9c968ee02189e7dced4e29124a93a36c7b6d5f1d0e79ac88e565356f",

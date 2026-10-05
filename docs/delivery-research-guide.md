@@ -12,11 +12,23 @@ Run from the project root with the Python 3.12 backend environment activated:
 python -m unified_intelligence.inspect_delivery_research
 ```
 
-The default input is the locally downloaded, ignored archive
+The preferred default input is the viewable, Git-ignored source CSV
+`data/raw/Porter_Delivery_Time_Estimation.csv`. Open it in Excel to show all 197,428
+original records and 14 columns. It is the exact `dataset.csv` from Kaggle version 1,
+renamed for clarity, not generated or cleaned data. Do not save Excel edits over the
+source: size and SHA-256 verification deliberately reject modified copies.
+
+If the CSV is absent, the default falls back to the original ignored ZIP
 `data/raw/porter_candidate_v1/porter-v1.zip`. Obtain version 1 from the Kaggle link
-in the source manifest if it is absent. `--archive` and `--manifest` accept explicit
-paths. The loader checks the CSV member's size, SHA-256, columns and row count.
-It reads in memory, without extracting or writing raw rows to the repository.
+in the source manifest if both are absent. `--csv`, `--archive` (mutually exclusive)
+and `--manifest` accept explicit paths. Both formats undergo the same size, SHA-256,
+column and row-count checks. The research loader does not rewrite source rows.
+
+The old `Quick_Commerce_Delivery_Logistics.csv` is no longer in `data/raw`; it is
+preserved at `data/archive/legacy_delivery/` only for legacy-model compatibility and
+comparison. Operations and the legacy training command still use that archived
+schema. The Porter source is for the separate ETA benchmark; it must not be renamed
+to the legacy filename or uploaded into the incompatible Operations delivery importer.
 
 Use `--output reports/research-source-local.json` to save a new aggregate report.
 Existing output files are never replaced. A changed source must be reviewed and

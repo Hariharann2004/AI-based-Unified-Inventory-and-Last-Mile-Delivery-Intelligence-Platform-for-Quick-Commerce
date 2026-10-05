@@ -128,3 +128,9 @@ def test_local_import_api_and_missing_artifacts(client, monkeypatch, work_store,
     raw.mkdir(parents=True)
     (raw / "supply_chain_dataset1.csv").write_bytes(csv_bytes([INVENTORY]))
     assert client.post("/api/workbench/imports/inventory").status_code == 201
+    archive = tmp_path / "data" / "archive" / "legacy_delivery"
+    archive.mkdir(parents=True)
+    (archive / "Quick_Commerce_Delivery_Logistics.csv").write_bytes(csv_bytes([DELIVERY]))
+    # Porter is not compatible with the legacy importer and must not be substituted.
+    (raw / "Porter_Delivery_Time_Estimation.csv").write_bytes(b"created_at\n2025-01-01\n")
+    assert client.post("/api/workbench/imports/delivery").status_code == 201

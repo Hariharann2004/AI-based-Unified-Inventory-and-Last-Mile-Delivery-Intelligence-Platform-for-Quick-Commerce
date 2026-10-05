@@ -72,6 +72,14 @@ class TrainingPipeline:
     def run(self) -> dict:
         inventory_path = self.raw_directory / "supply_chain_dataset1.csv"
         delivery_path = self.raw_directory / "Quick_Commerce_Delivery_Logistics.csv"
+        if not delivery_path.exists():
+            # Compatibility for the legacy serving models, not Porter model promotion.
+            delivery_path = (
+                self.raw_directory.parent
+                / "archive"
+                / "legacy_delivery"
+                / "Quick_Commerce_Delivery_Logistics.csv"
+            )
         inventory = pd.read_csv(inventory_path)
         delivery = pd.read_csv(delivery_path)
         self._validate(inventory, INVENTORY_FEATURES + ["Units_Sold", "Stockout_Flag"], "inventory")

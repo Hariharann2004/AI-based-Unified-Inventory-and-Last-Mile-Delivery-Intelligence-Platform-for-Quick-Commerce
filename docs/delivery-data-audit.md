@@ -11,13 +11,13 @@ Only aggregate counts and the source file's SHA-256 are saved in the report.
 From the repository root, with the Python 3.12 environment activated:
 
 ```powershell
-python -m unified_intelligence.audit_delivery data/raw/Quick_Commerce_Delivery_Logistics.csv
+python -m unified_intelligence.audit_delivery data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv
 ```
 
 To save a new report:
 
 ```powershell
-python -m unified_intelligence.audit_delivery data/raw/Quick_Commerce_Delivery_Logistics.csv --output reports/delivery-audit-local.json
+python -m unified_intelligence.audit_delivery data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv --output reports/delivery-audit-local.json
 ```
 
 The output file must not already exist: the command never replaces an existing file.

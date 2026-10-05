@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "audit_kind": "legacy_delivery_contract",
+  "rows": 25000,
+  "columns": [
+    "delivery_id",
+    "delivery_partner",
+    "package_type",
+    "vehicle_type",
+    "delivery_mode",
+    "region",
+    "weather_condition",
+    "distance_km",
+    "package_weight_kg",
+    "delivery_time_minutes",
+    "expected_time_minutes",
+    "delayed",
+    "delivery_status",
+    "delivery_rating",
+    "delivery_cost",
+    "Traffic_Level",
+    "Peak_Hour",
+    "Rider_Workload",
+    "ETA_Minutes",
+    "Delay_Risk",
+    "Delivery_Intelligence_Score"
+  ],
+  "missing_columns": [],
+  "missing_cells_by_column": {
+    "delivery_id": 0,
+    "delivery_partner": 0,
+    "package_type": 0,
+    "vehicle_type": 0,
+    "delivery_mode": 0,
+    "region": 0,
+    "weather_condition": 0,
+    "distance_km": 0,
+    "package_weight_kg": 0,
+    "delivery_time_minutes": 0,
+    "expected_time_minutes": 0,
+    "delayed": 0,
+    "delivery_status": 0,
+    "delivery_rating": 0,
+    "delivery_cost": 0,
+    "Traffic_Level": 0,
+    "Peak_Hour": 0,
+    "Rider_Workload": 0,
+    "ETA_Minutes": 0,
+    "Delay_Risk": 0,
+    "Delivery_Intelligence_Score": 0
+  },
+  "duplicate_rows_beyond_first": 0,
+  "numeric_profiles": {
+    "distance_km": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    },
+    "package_weight_kg": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    },
+    "expected_time_minutes": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    },
+    "Rider_Workload": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    },
+    "delivery_time_minutes": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    },
+    "delivery_rating": {
+      "missing": 0,
+      "non_numeric": 0,
+      "non_finite": 0,
+      "negative": 0,
+      "valid_nonnegative": 25000
+    }
+  },
+  "target": {
+    "definition_status": "unverified",
+    "valid_labels": 25000,
+    "invalid_or_missing_labels": 0,
+    "delayed": 6669,
+    "not_delayed": 18331,
+    "delay_rate": 0.26676,
+    "majority_baseline_accuracy": 0.73324,
+    "baseline_scope": "Descriptive full-dataset prevalence, not a held-out test score."
+  },
+  "time_label_comparison": {
+    "hypothesis": "delayed == (delivery_time_minutes > expected_time_minutes)",
+    "compared_rows": 25000,
+    "excluded_rows": 0,
+    "agreements": 9389,
+    "agreement_rate": 0.37556,
+    "contingency": [
+      {
+        "actual_exceeds_expected": false,
+        "label": "No",
+        "rows": 4264
+      },
+      {
+        "actual_exceeds_expected": false,
+        "label": "Yes",
+        "rows": 1544
+      },
+      {
+        "actual_exceeds_expected": true,
+        "label": "No",
+        "rows": 14067
+      },
+      {
+        "actual_exceeds_expected": true,
+        "label": "Yes",
+        "rows": 5125
+      }
+    ],
+    "interpretation": "Disagreement is not proof of bad data; verify the label definition."
+  },
+  "input_groups": {
+    "features": [
+      "delivery_partner",
+      "package_type",
+      "vehicle_type",
+      "delivery_mode",
+      "region",
+      "weather_condition",
+      "distance_km",
+      "package_weight_kg",
+      "expected_time_minutes",
+      "Traffic_Level",
+      "Peak_Hour",
+      "Rider_Workload"
+    ],
+    "distinct_input_groups": 25000,
+    "duplicate_input_rows_beyond_first": 0,
+    "groups_with_conflicting_valid_labels": 0
+  },
+  "segment_delay_rates": {
+    "Traffic_Level": [
+      {
+        "value": "High",
+        "rows": 8256,
+        "valid_labels": 8256,
+        "delayed": 2212,
+        "delay_rate": 0.26792635658914726
+      },
+      {
+        "value": "Low",
+        "rows": 8469,
+        "valid_labels": 8469,
+        "delayed": 2272,
+        "delay_rate": 0.2682725233203448
+      },
+      {
+        "value": "Medium",
+        "rows": 8275,
+        "valid_labels": 8275,
+        "delayed": 2185,
+        "delay_rate": 0.26404833836858005
+      }
+    ],
+    "Peak_Hour": [
+      {
+        "value": "No",
+        "rows": 12492,
+        "valid_labels": 12492,
+        "delayed": 3310,
+        "delay_rate": 0.2649695805315402
+      },
+      {
+        "value": "Yes",
+        "rows": 12508,
+        "valid_labels": 12508,
+        "delayed": 3359,
+        "delay_rate": 0.26854812919731375
+      }
+    ],
+    "Rider_Workload": [
+      {
+        "value": "1",
+        "rows": 5115,
+        "valid_labels": 5115,
+        "delayed": 1327,
+        "delay_rate": 0.2594330400782014
+      },
+      {
+        "value": "2",
+        "rows": 4958,
+        "valid_labels": 4958,
+        "delayed": 1286,
+        "delay_rate": 0.2593787817668415
+      },
+      {
+        "value": "3",
+        "rows": 5090,
+        "valid_labels": 5090,
+        "delayed": 1388,
+        "delay_rate": 0.2726915520628684
+      },
+      {
+        "value": "4",
+        "rows": 4893,
+        "valid_labels": 4893,
+        "delayed": 1312,
+        "delay_rate": 0.2681381565501737
+      },
+      {
+        "value": "5",
+        "rows": 4944,
+        "valid_labels": 4944,
+        "delayed": 1356,
+        "delay_rate": 0.27427184466019416
+      }
+    ],
+    "weather_condition": [
+      {
+        "value": "clear",
+        "rows": 4124,
+        "valid_labels": 4124,
+        "delayed": 719,
+        "delay_rate": 0.17434529582929195
+      },
+      {
+        "value": "cold",
+        "rows": 4158,
+        "valid_labels": 4158,
+        "delayed": 666,
+        "delay_rate": 0.16017316017316016
+      },
+      {
+        "value": "foggy",
+        "rows": 4219,
+        "valid_labels": 4219,
+        "delayed": 1279,
+        "delay_rate": 0.303152405783361
+      },
+      {
+        "value": "hot",
+        "rows": 4130,
+        "valid_labels": 4130,
+        "delayed": 707,
+        "delay_rate": 0.1711864406779661
+      },
+      {
+        "value": "rainy",
+        "rows": 4171,
+        "valid_labels": 4171,
+        "delayed": 1558,
+        "delay_rate": 0.37353152721169985
+      },
+      {
+        "value": "stormy",
+        "rows": 4198,
+        "valid_labels": 4198,
+        "delayed": 1740,
+        "delay_rate": 0.4144830871843735
+      }
+    ]
+  },
+  "rating_delay_rates": [
+    {
+      "value": "1",
+      "rows": 920,
+      "valid_labels": 920,
+      "delayed": 920,
+      "delay_rate": 1.0
+    },
+    {
+      "value": "2",
+      "rows": 3602,
+      "valid_labels": 3602,
+      "delayed": 3602,
+      "delay_rate": 1.0
+    },
+    {
+      "value": "3",
+      "rows": 5773,
+      "valid_labels": 5773,
+      "delayed": 2147,
+      "delay_rate": 0.37190368958946823
+    },
+    {
+      "value": "4",
+      "rows": 7318,
+      "valid_labels": 7318,
+      "delayed": 0,
+      "delay_rate": 0.0
+    },
+    {
+      "value": "5",
+      "rows": 7387,
+      "valid_labels": 7387,
+      "delayed": 0,
+      "delay_rate": 0.0
+    }
+  ],
+  "warnings": [
+    "Source collection method and delayed-label definition require source documentation.",
+    "These are full-dataset diagnostics, not held-out model accuracy or causal evidence.",
+    "delivery_rating availability before prediction is unverified; exclude it from evaluation.",
+    "Serving models and original targets remain unchanged by this audit."
+  ],
+  "source": {
+    "filename": "Quick_Commerce_Delivery_Logistics.csv",
+    "bytes": 2863608,
+    "sha256": "875d04cba0b970b6c429c955e218c9844efcd2e95a53cbf92c3ec367e66d0e6d",
+    "source_url": null,
+    "license": null,
+    "provenance_status": "unverified"
+  }
+}

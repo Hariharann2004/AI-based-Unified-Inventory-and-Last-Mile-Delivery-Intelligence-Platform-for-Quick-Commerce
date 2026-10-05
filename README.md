@@ -534,3 +534,15 @@ Future work, requiring new scope and evidence:
 
 Use the [workbench guide](docs/workbench-guide.md) as the reference point for continued
 development and the final-review walkthrough. CI remains pull-request-only.
+
+## Delivery-data improvement work
+
+The [delivery-data audit](docs/delivery-data-audit.md) documents the current CSV's
+class balance, delay-label checks and rating availability concerns. Run the read-only
+audit with `python -m unified_intelligence.audit_delivery <csv-path>` from the project
+root; it does not modify data or models. The tracked report contains aggregates only.
+
+The [improvement phases](docs/improvement-phases.md) track dataset selection,
+integration, safe features, model comparison, full-import processing and review exports.
+Each feature uses a separate branch and PR; implementation does not imply approval
+to merge or promote a new serving model.

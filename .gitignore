@@ -217,6 +217,7 @@ coverage/
 # in artifacts/manifest.json; keep only directory placeholders in Git.
 data/raw/*
 !data/raw/.gitkeep
+data/archive/**/*.csv
 models/*
 !models/.gitkeep
 

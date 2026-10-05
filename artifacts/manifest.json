@@ -4,7 +4,7 @@
     {
       "name": "delivery-logistics-source",
       "kind": "dataset",
-      "path": "data/raw/Quick_Commerce_Delivery_Logistics.csv",
+      "path": "data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv",
       "size_bytes": 2863608,
       "sha256": "875d04cba0b970b6c429c955e218c9844efcd2e95a53cbf92c3ec367e66d0e6d"
     },

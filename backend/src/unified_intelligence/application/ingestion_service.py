@@ -2,6 +2,7 @@ import csv
 import hashlib
 import io
 import uuid
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -13,6 +14,11 @@ MODELS = {"inventory": InventoryPredictionRequest, "delivery": DeliveryPredictio
 FILENAMES = {
     "inventory": "supply_chain_dataset1.csv",
     "delivery": "Quick_Commerce_Delivery_Logistics.csv",
+}
+LOCAL_DATASETS = {
+    "inventory": Path("data/raw/supply_chain_dataset1.csv"),
+    # Legacy serving schema remains isolated from the separate Porter ETA source.
+    "delivery": Path("data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv"),
 }
 MAX_BYTES = 15 * 1024 * 1024
 

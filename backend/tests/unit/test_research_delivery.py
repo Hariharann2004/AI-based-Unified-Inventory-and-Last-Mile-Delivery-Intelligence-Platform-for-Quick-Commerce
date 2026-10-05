@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 
 from unified_intelligence.inspect_delivery_research import main
-from unified_intelligence.ml.data_quality.research_delivery import load_research_delivery
+from unified_intelligence.ml.data_quality.research_delivery import (
+    default_research_source,
+    load_research_delivery,
+)
 
 
 @pytest.fixture()
@@ -114,3 +117,50 @@ def test_inspection_cli_missing_source_is_clear(tmp_path, capsys):
         main(["--manifest", str(tmp_path / "missing.json")])
     assert error.value.code == 1
     assert "Research source inspection failed" in capsys.readouterr().err
+
+
+def test_viewable_csv_matches_zip_and_inspection(research_source, tmp_path, capsys):
+    path, archive, _ = research_source
+    csv_path = tmp_path / "Porter_Delivery_Time_Estimation.csv"
+    with zipfile.ZipFile(archive) as source:
+        csv_path.write_bytes(source.read("dataset.csv"))
+    zipped = load_research_delivery(path, archive)
+    visible = load_research_delivery(path, csv_path)
+    pd.testing.assert_frame_equal(visible.inputs, zipped.inputs)
+    pd.testing.assert_series_equal(visible.elapsed_minutes, zipped.elapsed_minutes)
+    assert visible.audit == zipped.audit
+    assert main(["--manifest", str(path), "--csv", str(csv_path)]) == 0
+    assert json.loads(capsys.readouterr().out)["rows"] == 4
+
+
+@pytest.mark.parametrize("change_size", [False, True])
+def test_changed_viewable_csv_is_rejected(research_source, tmp_path, change_size):
+    path, archive, _ = research_source
+    with zipfile.ZipFile(archive) as source:
+        data = source.read("dataset.csv")
+    csv_path = tmp_path / "edited.csv"
+    csv_path.write_bytes(data + b"\n" if change_size else data.replace(b"10:30", b"10:31"))
+    with pytest.raises(ValueError, match="byte size" if change_size else "checksum"):
+        load_research_delivery(path, csv_path)
+
+
+def test_default_prefers_csv_without_hiding_missing_or_modified_sources(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    raw = tmp_path / "data" / "raw"
+    raw.mkdir(parents=True)
+    assert default_research_source().suffix == ".zip"
+    csv_path = raw / "Porter_Delivery_Time_Estimation.csv"
+    csv_path.write_bytes(b"edited")
+    assert default_research_source() == csv_path.relative_to(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "cli_module",
+    ["unified_intelligence.inspect_delivery_research", "unified_intelligence.benchmark_delivery"],
+)
+def test_source_options_are_mutually_exclusive(cli_module):
+    import importlib
+
+    with pytest.raises(SystemExit) as error:
+        importlib.import_module(cli_module).main(["--csv", "source.csv", "--archive", "source.zip"])
+    assert error.value.code == 2

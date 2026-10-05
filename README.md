@@ -194,9 +194,23 @@ Inventory_Level < Units_Sold × Supplier_Lead_Time_Days × 1.15
 
 The `1.15` multiplier represents a 15% safety-stock buffer. This rule creates 6,499 positive risk rows, approximately 7.1% of the inventory dataset. `Units_Sold` is not provided to the stockout classifier as an input feature.
 
-### Delivery dataset
+### Delivery datasets: current research source and legacy compatibility
 
-`data/raw/Quick_Commerce_Delivery_Logistics.csv` contains:
+The viewable delivery research source is
+`data/raw/Porter_Delivery_Time_Estimation.csv`: **197,428 records, 14 columns**.
+It is the unchanged CSV extracted from the approved Kaggle Porter ZIP, not a
+synthetically created dataset. Open it in Excel to inspect the original rows.
+Creation and completion timestamps support an elapsed-time ETA target, but there
+is no promised delivery deadline. Seven missing completion outcomes are excluded
+only during research evaluation; the raw CSV preserves every original row.
+See [the research guide](docs/delivery-research-guide.md) for inspection and training.
+
+The old dataset is removed from `data/raw` and kept recoverably at
+`data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv`.
+It is retained only for legacy serving-model compatibility and comparison, not
+presented as the new research source. Operations imports and `train_models` still
+use its legacy schema; extracting Porter does not migrate or promote serving models.
+The archived dataset contains:
 
 - 25,000 delivery records.
 - 9 delivery partners and 5 regions.
@@ -382,9 +396,11 @@ pip install --no-deps -e .
 ```
 
 The raw CSVs and trained model binaries are not part of a fresh Git checkout. Place
-`supply_chain_dataset1.csv` and `Quick_Commerce_Delivery_Logistics.csv` in `data/raw/`,
-and the four `.joblib` files named in [`artifacts/manifest.json`](artifacts/manifest.json)
-in `models/`. From `backend/`, run `python -m unified_intelligence.artifacts verify` to
+`supply_chain_dataset1.csv` and `Porter_Delivery_Time_Estimation.csv` in `data/raw/`.
+For legacy-model compatibility, place `Quick_Commerce_Delivery_Logistics.csv` in
+`data/archive/legacy_delivery/`. Put the four `.joblib` files named in
+[`artifacts/manifest.json`](artifacts/manifest.json) in `models/`.
+From `backend/`, run `python -m unified_intelligence.artifacts verify` to
 check their sizes and SHA-256 hashes. Once the CSVs are available, you can create the
 models yourself with `python -m unified_intelligence.train_models` instead of obtaining
 the pre-trained binaries. See the dataset sections above for their required columns.

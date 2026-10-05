@@ -18,6 +18,7 @@ from unified_intelligence.application.evaluation_service import EvaluationServic
 from unified_intelligence.application.evidence_export import ExportConflict, export_evidence
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
+    LOCAL_DATASETS,
     MAX_BYTES,
     IngestionService,
     validate_kind,
@@ -102,7 +103,7 @@ def import_dataset(kind):
     if uploaded:
         content, source = uploaded.stream.read(MAX_BYTES + 1), "uploaded_csv"
     else:
-        path = PROJECT_ROOT / "data" / "raw" / FILENAMES[kind]
+        path = PROJECT_ROOT / LOCAL_DATASETS[kind]
         if path.stat().st_size > MAX_BYTES:
             raise ValueError("CSV exceeds the 15 MiB import limit.")
         content, source = path.read_bytes(), FILENAMES[kind]

@@ -133,10 +133,15 @@ def test_benchmark_cli_existing_output_does_not_train(tmp_path, monkeypatch, cap
     assert "output already exists" in capsys.readouterr().err
 
 
-def test_benchmark_cli_save_and_warning(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(
-        benchmark_delivery, "load_research_delivery", lambda *args: SimpleNamespace(audit={})
-    )
+@pytest.mark.parametrize("source_option", ["--csv", "--archive"])
+def test_benchmark_cli_save_and_warning(tmp_path, monkeypatch, capsys, source_option):
+    source_path = tmp_path / ("source.csv" if source_option == "--csv" else "source.zip")
+
+    def load(manifest, source):
+        assert source == source_path
+        return SimpleNamespace(audit={})
+
+    monkeypatch.setattr(benchmark_delivery, "load_research_delivery", load)
     monkeypatch.setattr(
         benchmark_delivery,
         "run_research_window",
@@ -147,7 +152,12 @@ def test_benchmark_cli_save_and_warning(tmp_path, monkeypatch, capsys):
         },
     )
     output = tmp_path / "report.json"
-    assert benchmark_delivery.main(["--include-load", "--output", str(output)]) == 0
+    assert (
+        benchmark_delivery.main(
+            [source_option, str(source_path), "--include-load", "--output", str(output)]
+        )
+        == 0
+    )
     assert json.loads(output.read_text())["windows"][0]["include_load"] is True
     assert "unverified" in capsys.readouterr().err
 

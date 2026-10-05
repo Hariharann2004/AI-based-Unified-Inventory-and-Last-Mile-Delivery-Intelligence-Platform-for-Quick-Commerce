@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   test: {
+    maxWorkers: 2,
     environment: "jsdom",
     setupFiles: ["./src/test/setup.js"],
     coverage: {

@@ -57,6 +57,10 @@ lease-based restart recovery and pinned source/model versions. Operations expose
 the controls without removing visible-page processing. See the
 [full-import guide](full-import-processing.md). Phases 8–9 are next.
 
+Phase 8 is on `feature/evaluation-evidence-ui`: metric explanations, training-only
+baselines, zero-recall warnings, all-window comparisons and a separate saved ETA
+research view. See the [evaluation interface guide](evaluation-interface.md).
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

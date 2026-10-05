@@ -1,6 +1,6 @@
 """Local workbench API. No inferred joins or externally executed actions."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 from pydantic import ValidationError
 
 from unified_intelligence.api.schemas.workbench import (
@@ -15,6 +15,7 @@ from unified_intelligence.api.schemas.workbench import (
 )
 from unified_intelligence.application.batch_service import BatchService
 from unified_intelligence.application.evaluation_service import EvaluationService
+from unified_intelligence.application.evidence_export import ExportConflict, export_evidence
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
     MAX_BYTES,
@@ -201,6 +202,36 @@ def research_benchmarks():
 @workbench.get("/research-benchmarks/<benchmark_id>")
 def research_benchmark(benchmark_id):
     return jsonify(ResearchReportService().get(benchmark_id))
+
+
+@workbench.errorhandler(ExportConflict)
+def export_conflict(error):
+    return jsonify({"error": str(error)}), 409
+
+
+def evidence_download(payload, evidence_type):
+    format_name = request.args.get("format", "json")
+    content, filename = export_evidence(payload, evidence_type, format_name)
+    response = Response(
+        content, mimetype="application/json" if format_name == "json" else "text/html"
+    )
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+    )
+    return response
+
+
+@workbench.get("/evaluations/<evaluation_id>/export")
+def export_evaluation(evaluation_id):
+    return evidence_download(EvaluationService(store()).get(evaluation_id), "operational")
+
+
+@workbench.get("/research-benchmarks/<benchmark_id>/export")
+def export_research(benchmark_id):
+    return evidence_download(ResearchReportService().get(benchmark_id), "eta_research")
 
 
 @workbench.get("/evaluations/<evaluation_id>")

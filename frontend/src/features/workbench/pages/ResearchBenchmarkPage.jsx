@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ComparisonBars, EvidencePlot } from "../components/EvidenceCharts.jsx";
+import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote } from "../hooks/useRemote.js";
 
 const number = (value) => (Number.isFinite(value) ? value.toFixed(3) : "—");
@@ -41,7 +42,7 @@ export function ResearchBenchmarkPage() {
         </div>
         <span className="mode-label">ETA regression · minutes</span>
       </div>
-      <div className="surface source-controls">
+      <div className="surface source-picker">
         <label>
           Feature variant
           <select value={variant} onChange={(event) => setVariant(event.target.value)}>
@@ -126,7 +127,7 @@ export function ResearchBenchmarkPage() {
           title="Absolute error distribution · all test records"
           unit="records"
           values={current.absolute_error_histogram.map((item) => ({
-            label: item.interval,
+            label: item.interval.replaceAll("_", " "),
             value: item.rows,
           }))}
         />
@@ -201,6 +202,7 @@ export function ResearchBenchmarkPage() {
           {warning}
         </p>
       ))}
+      <ExportButtons path={`/research-benchmarks/${id}`} filename="porter-eta-evidence" />
       <details className="surface">
         <summary>Research protocol and source provenance</summary>
         <p>

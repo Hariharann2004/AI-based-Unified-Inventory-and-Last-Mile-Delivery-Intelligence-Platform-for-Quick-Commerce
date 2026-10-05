@@ -116,7 +116,7 @@ export function ProcessingJobs({ selected, openCases }) {
               minutes for its lease to expire before resuming.
             </p>
           )}
-          {!!failures.data?.items.length && (
+          {!!failures.data?.items?.length && (
             <div className="table-scroll">
               <h3>Failed records</h3>
               <table>

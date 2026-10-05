@@ -43,23 +43,33 @@ not part of this phase.
 Phase 6 is on `feature/delivery-research-comparison`: three expanding chronological
 windows, order-only/load-assumption comparisons, constant baselines, overlapping
 diagnostic cases and complete test error histograms. This is an offline research
-benchmark, not yet a new screen in the Operations interface. No serving promotion
-is automatic; phases 7–9 remain the full-import/UI/export work.
+benchmark; the separate screen is added in phase 8. No serving promotion
+is automatic; phases 7–9 add full-import/UI/export work.
 
 The first full-source comparison is saved in `reports/porter_eta_benchmark.json`;
 the [results explanation](delivery-research-results.md) records the modest measured
-performance and the decision not to promote either research model. This does not
-complete the future operational integration or UI/export phases.
+performance and the decision not to promote either research model. Future live
+operational integration and serving-model promotion remain outside these phases.
 
 Phase 7 is on `feature/full-import-processing`: a full-import background job with
 per-record checkpoints, progress, cooperative cancellation, explicit failed retries,
 lease-based restart recovery and pinned source/model versions. Operations exposes
 the controls without removing visible-page processing. See the
-[full-import guide](full-import-processing.md). Phases 8–9 are next.
+[full-import guide](full-import-processing.md).
 
 Phase 8 is on `feature/evaluation-evidence-ui`: metric explanations, training-only
 baselines, zero-recall warnings, all-window comparisons and a separate saved ETA
 research view. See the [evaluation interface guide](evaluation-interface.md).
+
+Phase 9 is on `feature/evaluation-report-export`: completed evidence exports in
+JSON and offline printable HTML, with all windows, charts, baselines, source
+provenance, report checksums and limitations. See the [export guide](evidence-export.md).
+All nine improvement features are implemented on dependent branches/PRs; they are
+not automatically merged, production-deployed or approved for model promotion.
+The final project document remains a separate next step.
+
+See the [verification record](improvement-verification.md) for test results,
+isolated browser checks and the remaining full-size/manual checks.
 
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation

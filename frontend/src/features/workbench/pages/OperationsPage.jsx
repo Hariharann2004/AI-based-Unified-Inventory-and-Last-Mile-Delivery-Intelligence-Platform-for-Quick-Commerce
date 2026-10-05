@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { request } from "../api/client.js";
+import { ProcessingJobs } from "../components/ProcessingJobs.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 
@@ -111,6 +112,11 @@ export function OperationsPage({ imports, version, refresh, openCases }) {
           </p>
         )}
       </div>
+      <ProcessingJobs
+        key={selected?.import_id || "empty"}
+        selected={selected}
+        openCases={openCases}
+      />
       <div className="section-heading">
         <div>
           <h2>Source records</h2>

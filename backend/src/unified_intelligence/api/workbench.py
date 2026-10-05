@@ -7,7 +7,9 @@ from unified_intelligence.api.schemas.workbench import (
     ActionRequest,
     BatchRequest,
     EvaluationRequest,
+    ProcessingRequest,
     ReplayRequest,
+    ResumeProcessingRequest,
     ScenarioRequest,
     StepRequest,
 )
@@ -19,10 +21,15 @@ from unified_intelligence.application.ingestion_service import (
     IngestionService,
     validate_kind,
 )
+from unified_intelligence.application.processing_service import ProcessingService
 from unified_intelligence.application.replay_service import ReplayConflict, ReplayService
 from unified_intelligence.application.scenario_service import SCENARIOS, ScenarioService
 from unified_intelligence.core.config import PROJECT_ROOT, get_settings
 from unified_intelligence.infrastructure.persistence.case_repository import CaseRepository
+from unified_intelligence.infrastructure.persistence.processing_repository import (
+    ProcessingConflict,
+    ProcessingRepository,
+)
 from unified_intelligence.infrastructure.persistence.sqlite_decision_repository import (
     SQLiteDecisionRepository,
 )
@@ -194,3 +201,62 @@ def evaluation(evaluation_id):
 def start_evaluation():
     value = payload(EvaluationRequest)
     return jsonify(EvaluationService(store()).start(value.kind, value.import_id)), 202
+
+
+def processing_service():
+    from unified_intelligence.application.delivery_service import DeliveryService
+    from unified_intelligence.application.inventory_service import InventoryService
+
+    # Independent worker instances, not mutable/global API model caches.
+    return ProcessingService(
+        store(),
+        BatchService(store(), InventoryService, DeliveryService, get_settings().model_directory),
+    )
+
+
+def processing_repository():
+    return ProcessingRepository(store().path)
+
+
+@workbench.errorhandler(ProcessingConflict)
+def processing_conflict(error):
+    return jsonify({"error": str(error)}), 409
+
+
+@workbench.get("/processing-jobs")
+def processing_jobs():
+    return jsonify({"jobs": processing_repository().jobs(request.args.get("import_id"))})
+
+
+@workbench.post("/processing-jobs")
+def start_processing():
+    value = payload(ProcessingRequest)
+    return jsonify(processing_service().start(value.kind, value.import_id)), 202
+
+
+@workbench.get("/processing-jobs/<job_id>")
+def get_processing(job_id):
+    return jsonify(processing_repository().get(job_id))
+
+
+@workbench.get("/processing-jobs/<job_id>/items")
+def processing_items(job_id):
+    return jsonify(
+        processing_repository().items(
+            job_id,
+            status=request.args.get("status"),
+            limit=request.args.get("limit", 20, type=int),
+            offset=request.args.get("offset", 0, type=int),
+        )
+    )
+
+
+@workbench.post("/processing-jobs/<job_id>/cancel")
+def cancel_processing(job_id):
+    return jsonify(processing_repository().cancel(job_id))
+
+
+@workbench.post("/processing-jobs/<job_id>/resume")
+def resume_processing(job_id):
+    value = payload(ResumeProcessingRequest)
+    return jsonify(processing_service().resume(job_id, retry_failed=value.retry_failed)), 202

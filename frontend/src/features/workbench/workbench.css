@@ -552,6 +552,18 @@
   background: #faebed;
   color: #943d4e;
 }
+.workbench .processing-panel {
+  margin: 24px 0;
+  border-top: 3px solid #078779;
+}
+.workbench .processing-panel .section-heading {
+  margin-top: 0;
+}
+.workbench .processing-progress progress {
+  width: 100%;
+  height: 16px;
+  accent-color: #078779;
+}
 .workbench footer {
   padding: 20px 36px;
   color: #657e87;

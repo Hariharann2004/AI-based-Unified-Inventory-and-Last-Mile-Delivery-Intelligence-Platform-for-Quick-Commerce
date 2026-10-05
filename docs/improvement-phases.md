@@ -21,6 +21,11 @@ the current dataset's aggregate snapshot. Phase 2 assesses new data without maki
 it the serving model's input or inventing missing fields. Remaining phases are not
 completed simply because their plan is documented here.
 
+Phase 2 is on `feature/delivery-dataset-selection`. The user approved the
+[Porter ETA research benchmark](delivery-dataset-selection.md) as a separate dataset
+on 2026-10-05. Its versioned source manifest is tracked; the raw download is not.
+The approval is not permission to replace the serving model or invent delay labels.
+
 Full-import processing means one user action starts a job; the backend still handles
 manageable chunks. It is inference, not model training. The existing evaluation
 already evaluates the entire selected import; the operations page processes the

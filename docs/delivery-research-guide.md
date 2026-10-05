@@ -38,8 +38,8 @@ This is research ingestion, not an import into Operations or SQLite. Its ETA tar
 includes preparation/waiting and is not the current CSV's delay flag. No customer
 deadline exists. No serving model is replaced or promoted by source inspection.
 
-Safe feature construction, chronological training and comparative evaluation are
-subsequent phases. A new source is not proof that model performance has improved.
+A new source is not proof that model performance has improved. Research feature
+construction and training stay separate from operational model promotion.
 
 ## Prediction-time features
 
@@ -57,3 +57,34 @@ excluded by default because their snapshot collection timing is unverified. Any
 load-inclusive comparison must retain an explicit availability warning and an
 order-only reference. Calendar fields use source-clock time, not verified local
 peak-hour labels. Training/test protocols are implemented in the following phases.
+
+## Train and test the separate ETA benchmark
+
+```powershell
+python -m unified_intelligence.benchmark_delivery --output reports/eta-research-local.json
+```
+
+This trains three predeclared LightGBM configurations (standard, regularized and
+shallow) on the first 60% of whole source dates. Validation uses the next 20%; only
+validation MAE chooses the configuration. The selected model is then evaluated on
+the last 20%. Training outcomes completed after the validation cutoff are purged;
+validation outcomes completed after the test cutoff are purged. Counts and source-row
+index hashes make the actual partitions inspectable. No test-driven feature/tuning
+choice or automatic refit/promotion follows evaluation.
+
+Reports contain MAE/RMSE in minutes, R², median error and the fractions of predictions
+within 5/10 minutes. R² is not classification accuracy, can be negative and is null
+for a constant observed population. Compare against both training-mean and
+training-median constant forecasts, not against scores from the old dataset.
+
+`--include-load` enables the unverified fleet-snapshot assumption and prints a warning.
+The default remains order-only. All eligible positive durations stay included; no
+hard-coded 180-minute removal or clipping is applied to improve test scores.
+
+The command creates temporary in-memory models and writes only a new research JSON
+report. It never saves `.joblib` files, changes the artifact manifest or replaces the
+models powering the workbench. Test results must not become tuning feedback for the
+same holdout; future model changes need a new documented evaluation protocol/data.
+
+The leakage controls follow [scikit-learn's guidance](https://scikit-learn.org/stable/common_pitfalls.html).
+The bounded complexity configurations follow [LightGBM tuning guidance](https://lightgbm.readthedocs.io/en/stable/Parameters-Tuning.html).

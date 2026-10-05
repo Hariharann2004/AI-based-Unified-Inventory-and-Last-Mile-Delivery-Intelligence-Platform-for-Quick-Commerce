@@ -74,6 +74,18 @@ def regression_evidence(y, predicted):
     }
 
 
+def majority_baseline(training_labels, test_labels):
+    """Choose the constant class on training only, never on the test distribution."""
+    prevalence = float(np.asarray(training_labels).mean())
+    label = int(prevalence >= 0.5)
+    return {
+        "name": "Training-majority constant classifier",
+        "training_positive_fraction": prevalence,
+        "predicted_label": label,
+        **classification_evidence(test_labels, np.full(len(test_labels), label), 0.5),
+    }
+
+
 def date_windows(frame):
     dates = sorted(frame["Date"].unique())
     if len(dates) < 10:
@@ -208,6 +220,9 @@ class WorkbenchEvaluator:
                     ),
                     "classification": classification_evidence(
                         y_class.iloc[test], probabilities, threshold
+                    ),
+                    "classification_baseline": majority_baseline(
+                        y_class.iloc[train], y_class.iloc[test]
                     ),
                     "action_threshold": classification_evidence(
                         y_class.iloc[test], probabilities, 0.7

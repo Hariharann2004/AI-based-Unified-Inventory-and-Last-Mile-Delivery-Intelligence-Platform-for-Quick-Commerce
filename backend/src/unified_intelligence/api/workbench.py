@@ -23,6 +23,7 @@ from unified_intelligence.application.ingestion_service import (
 )
 from unified_intelligence.application.processing_service import ProcessingService
 from unified_intelligence.application.replay_service import ReplayConflict, ReplayService
+from unified_intelligence.application.research_report_service import ResearchReportService
 from unified_intelligence.application.scenario_service import SCENARIOS, ScenarioService
 from unified_intelligence.core.config import PROJECT_ROOT, get_settings
 from unified_intelligence.infrastructure.persistence.case_repository import CaseRepository
@@ -190,6 +191,16 @@ def run_scenario():
 @workbench.get("/evaluations")
 def evaluations():
     return jsonify(EvaluationService(store()).reports())
+
+
+@workbench.get("/research-benchmarks")
+def research_benchmarks():
+    return jsonify(ResearchReportService().reports())
+
+
+@workbench.get("/research-benchmarks/<benchmark_id>")
+def research_benchmark(benchmark_id):
+    return jsonify(ResearchReportService().get(benchmark_id))
 
 
 @workbench.get("/evaluations/<evaluation_id>")

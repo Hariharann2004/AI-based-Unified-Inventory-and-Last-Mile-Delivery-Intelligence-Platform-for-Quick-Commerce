@@ -546,3 +546,9 @@ The [improvement phases](docs/improvement-phases.md) track dataset selection,
 integration, safe features, model comparison, full-import processing and review exports.
 Each feature uses a separate branch and PR; implementation does not imply approval
 to merge or promote a new serving model.
+
+A separate [ETA research workflow](docs/delivery-research-guide.md) now loads the
+approved, checksum-pinned Kaggle dataset without changing the original operational
+models. Run `python -m unified_intelligence.benchmark_delivery --all-windows --output reports/eta-local.json`
+for chronological, validation-tuned LightGBM evidence. The dataset has no recorded
+promised deadline, so this benchmark reports ETA errors rather than delay accuracy.

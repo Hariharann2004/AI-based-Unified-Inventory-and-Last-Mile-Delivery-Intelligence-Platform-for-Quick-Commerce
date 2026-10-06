@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { request } from "../api/client.js";
+import { DatasetLibrary } from "../components/DatasetLibrary.jsx";
 import { ProcessingJobs } from "../components/ProcessingJobs.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 
-export function OperationsPage({ imports, version, refresh, openCases }) {
+export function OperationsPage({ imports, version, refresh, openCases, openResearch }) {
   const [kind, setKind] = useState("inventory");
   const [importId, setImportId] = useState("");
   const [offset, setOffset] = useState(0);
@@ -68,6 +69,7 @@ export function OperationsPage({ imports, version, refresh, openCases }) {
         </div>
         <span className="mode-label">Historical data · not live</span>
       </div>
+      <DatasetLibrary openResearch={openResearch} />
       <div className="surface">
         <SourcePicker
           imports={imports}

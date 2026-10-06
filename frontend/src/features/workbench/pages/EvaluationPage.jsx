@@ -7,8 +7,8 @@ import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 import { ResearchBenchmarkPage } from "./ResearchBenchmarkPage.jsx";
 
-export function EvaluationPage({ imports, version, refresh }) {
-  const [mode, setMode] = useState("operational");
+export function EvaluationPage({ imports, version, refresh, initialMode = "operational" }) {
+  const [mode, setMode] = useState(initialMode);
   const [kind, setKind] = useState("inventory");
   const [importId, setImportId] = useState("");
   const [windowIndex, setWindowIndex] = useState(2);

@@ -11,6 +11,9 @@ This is local historical automation, not an always-on live production integratio
 ## Review walkthrough
 
 1. Start the backend and frontend using the README. Open Operations.
+   The Project datasets area shows all three original CSV sources. Select Porter
+   to preview/download its CSV or open its separate ETA research results. It does
+   not replace the local operational delivery import.
 2. Import the local inventory and delivery datasets. Existing file hashes are reused;
    reports show accepted/rejected counts. CSV uploads use the same validation path.
 3. Choose inventory, filter by exact `WH_1` / `SKU_1`, and analyze a case or process the

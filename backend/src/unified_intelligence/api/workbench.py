@@ -1,6 +1,6 @@
 """Local workbench API. No inferred joins or externally executed actions."""
 
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, jsonify, request, send_file
 from pydantic import ValidationError
 
 from unified_intelligence.api.schemas.workbench import (
@@ -14,13 +14,14 @@ from unified_intelligence.api.schemas.workbench import (
     StepRequest,
 )
 from unified_intelligence.application.batch_service import BatchService
+from unified_intelligence.application.dataset_service import DatasetService
 from unified_intelligence.application.evaluation_service import EvaluationService
 from unified_intelligence.application.evidence_export import ExportConflict, export_evidence
 from unified_intelligence.application.ingestion_service import (
     FILENAMES,
-    LOCAL_DATASETS,
     MAX_BYTES,
     IngestionService,
+    local_dataset_path,
     validate_kind,
 )
 from unified_intelligence.application.processing_service import ProcessingService
@@ -96,6 +97,32 @@ def imports():
     return jsonify(store().imports())
 
 
+@workbench.get("/datasets")
+def datasets():
+    return jsonify(DatasetService().catalog())
+
+
+@workbench.get("/datasets/<dataset_id>/preview")
+def dataset_preview(dataset_id):
+    return jsonify(
+        DatasetService().preview(
+            dataset_id,
+            limit=int(request.args.get("limit", "10")),
+            offset=int(request.args.get("offset", "0")),
+        )
+    )
+
+
+@workbench.get("/datasets/<dataset_id>/download")
+def dataset_download(dataset_id):
+    service = DatasetService()
+    path = service.download_path(dataset_id)
+    response = send_file(path, mimetype="text/csv", as_attachment=True, download_name=path.name)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 @workbench.post("/imports/<kind>")
 def import_dataset(kind):
     validate_kind(kind)
@@ -103,7 +130,7 @@ def import_dataset(kind):
     if uploaded:
         content, source = uploaded.stream.read(MAX_BYTES + 1), "uploaded_csv"
     else:
-        path = PROJECT_ROOT / LOCAL_DATASETS[kind]
+        path = local_dataset_path(kind, PROJECT_ROOT)
         if path.stat().st_size > MAX_BYTES:
             raise ValueError("CSV exceeds the 15 MiB import limit.")
         content, source = path.read_bytes(), FILENAMES[kind]

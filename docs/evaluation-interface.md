@@ -12,6 +12,11 @@ The Model evaluation area has two distinct modes:
    serving models. Compare order-only and opt-in load-assumption variants, three
    chronological windows, constant baselines, case coverage and complete error bins.
 
+The research mode includes a read-only dataset selector, original CSV preview and
+full CSV download. Porter is selected by default. The same controls appear in
+Operations with a **View Porter ETA results** shortcut. Research and operational
+CSV roles remain separate even though all three source files are visible in `data/raw`.
+
 MAE/RMSE are measured in target units, not percentages. R² can be negative. Within
 ±10 minutes is a tolerance rate, not classification accuracy. No observed promised
 deadline exists in the research source, so it cannot validate delay labels.

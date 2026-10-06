@@ -10,6 +10,7 @@ export function Workbench() {
   const [page, setPage] = useState("operations");
   const [version, setVersion] = useState(0);
   const [selectedId, setSelectedId] = useState(null);
+  const [evaluationMode, setEvaluationMode] = useState("operational");
   const refresh = useCallback(() => setVersion((value) => value + 1), []);
   const remote = useRemote("/imports", version);
   const imports = remote.data || [];
@@ -17,7 +18,11 @@ export function Workbench() {
     setSelectedId(id);
     setPage("cases");
   }
-  const shared = { imports, version, refresh, openCases };
+  function openResearch() {
+    setEvaluationMode("research");
+    setPage("evaluation");
+  }
+  const shared = { imports, version, refresh, openCases, openResearch };
   return (
     <div className="workbench">
       <a className="skip-link" href="#workspace">
@@ -45,7 +50,10 @@ export function Workbench() {
               key={id}
               className={page === id ? "active" : ""}
               aria-current={page === id ? "page" : undefined}
-              onClick={() => setPage(id)}
+              onClick={() => {
+                if (id === "evaluation") setEvaluationMode("operational");
+                setPage(id);
+              }}
             >
               <span aria-hidden="true">0{index + 1}</span>
               {label}
@@ -79,7 +87,7 @@ export function Workbench() {
             />
           )}
           {page === "replay" && <ReplayPage {...shared} />}
-          {page === "evaluation" && <EvaluationPage {...shared} />}
+          {page === "evaluation" && <EvaluationPage {...shared} initialMode={evaluationMode} />}
         </main>
         <footer>
           Decision support, not autonomous execution. Historical data and synthetic scenarios are

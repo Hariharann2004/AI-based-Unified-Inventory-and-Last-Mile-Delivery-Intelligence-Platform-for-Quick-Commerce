@@ -17,8 +17,7 @@ FILENAMES = {
 }
 LOCAL_DATASETS = {
     "inventory": Path("data/raw/supply_chain_dataset1.csv"),
-    # Legacy serving schema remains isolated from the separate Porter ETA source.
-    "delivery": Path("data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv"),
+    "delivery": Path("data/raw/Quick_Commerce_Delivery_Logistics.csv"),
 }
 MAX_BYTES = 15 * 1024 * 1024
 
@@ -27,6 +26,17 @@ def validate_kind(kind):
     if kind not in MODELS:
         raise ValueError("kind must be inventory or delivery.")
     return kind
+
+
+def local_dataset_path(kind, root):
+    """Prefer visible raw CSVs, retaining compatibility with older archive-only setups."""
+    validate_kind(kind)
+    path = Path(root) / LOCAL_DATASETS[kind]
+    if kind == "delivery" and not path.is_file():
+        archive = Path(root) / "data/archive/legacy_delivery" / FILENAMES[kind]
+        if archive.is_file():
+            return archive
+    return path
 
 
 class IngestionService:

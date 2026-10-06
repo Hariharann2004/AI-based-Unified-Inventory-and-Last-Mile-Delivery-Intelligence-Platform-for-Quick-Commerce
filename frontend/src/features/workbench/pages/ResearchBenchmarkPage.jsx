@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatasetLibrary } from "../components/DatasetLibrary.jsx";
 import { ComparisonBars, EvidencePlot } from "../components/EvidenceCharts.jsx";
 import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote } from "../hooks/useRemote.js";
@@ -6,6 +7,15 @@ import { useRemote } from "../hooks/useRemote.js";
 const number = (value) => (Number.isFinite(value) ? value.toFixed(3) : "—");
 
 export function ResearchBenchmarkPage() {
+  return (
+    <>
+      <DatasetLibrary />
+      <ResearchEvidence />
+    </>
+  );
+}
+
+function ResearchEvidence() {
   const [variant, setVariant] = useState("order_only");
   const [windowIndex, setWindowIndex] = useState(2);
   const listing = useRemote("/research-benchmarks");

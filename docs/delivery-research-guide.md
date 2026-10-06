@@ -24,11 +24,18 @@ in the source manifest if both are absent. `--csv`, `--archive` (mutually exclus
 and `--manifest` accept explicit paths. Both formats undergo the same size, SHA-256,
 column and row-count checks. The research loader does not rewrite source rows.
 
-The old `Quick_Commerce_Delivery_Logistics.csv` is no longer in `data/raw`; it is
-preserved at `data/archive/legacy_delivery/` only for legacy-model compatibility and
-comparison. Operations and the legacy training command still use that archived
-schema. The Porter source is for the separate ETA benchmark; it must not be renamed
+The original `Quick_Commerce_Delivery_Logistics.csv` is restored in `data/raw`, with
+an identical recovery copy preserved at `data/archive/legacy_delivery/`. Operations
+and the legacy training command prefer the visible raw CSV and support an older
+archive-only setup. Its source limitations remain unchanged. The Porter source is
+for the separate ETA benchmark; it must not be renamed
 to the legacy filename or uploaded into the incompatible Operations delivery importer.
+
+Both source files are visible in **Operations → Project datasets · CSV preview &
+download**. Select Porter to preview its original rows, download the full CSV or
+choose **View Porter ETA results**. Source controls also appear in **Model
+evaluation → ETA research benchmark**, independently of whether a saved report is
+available. They do not import Porter into the operational delivery schema.
 
 Use `--output reports/research-source-local.json` to save a new aggregate report.
 Existing output files are never replaced. A changed source must be reviewed and

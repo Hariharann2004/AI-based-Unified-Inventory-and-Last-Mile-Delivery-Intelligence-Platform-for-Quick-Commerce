@@ -279,6 +279,36 @@
 .workbench .table-scroll {
   overflow-x: auto;
 }
+.workbench .dataset-library h2 {
+  margin-top: 8px;
+}
+.workbench .dataset-library code {
+  overflow-wrap: anywhere;
+}
+.workbench .dataset-download {
+  display: inline-block;
+  border: 1px solid #c7d8dd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #234753;
+  font-size: 13px;
+  text-decoration: none;
+}
+.workbench .dataset-download:hover {
+  background: #edf5f4;
+}
+.workbench .dataset-preview {
+  max-height: 360px;
+  border: 1px solid var(--line);
+}
+.workbench .dataset-preview th,
+.workbench .dataset-preview td {
+  white-space: nowrap;
+}
+.workbench .dataset-preview th {
+  position: sticky;
+  top: 0;
+}
 .workbench table {
   width: 100%;
   border-collapse: collapse;

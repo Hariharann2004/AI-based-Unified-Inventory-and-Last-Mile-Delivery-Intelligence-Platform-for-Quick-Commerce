@@ -205,12 +205,13 @@ is no promised delivery deadline. Seven missing completion outcomes are excluded
 only during research evaluation; the raw CSV preserves every original row.
 See [the research guide](docs/delivery-research-guide.md) for inspection and training.
 
-The old dataset is removed from `data/raw` and kept recoverably at
-`data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv`.
-It is retained only for legacy serving-model compatibility and comparison, not
-presented as the new research source. Operations imports and `train_models` still
-use its legacy schema; extracting Porter does not migrate or promote serving models.
-The archived dataset contains:
+The operational delivery source is also viewable at
+`data/raw/Quick_Commerce_Delivery_Logistics.csv`. Its identical recovery copy remains
+at `data/archive/legacy_delivery/Quick_Commerce_Delivery_Logistics.csv`.
+It retains its legacy serving-model compatibility and comparison role and its known
+rating-timing/delay-label limitations. Operations imports and `train_models` prefer
+this original CSV in `data/raw`; archive-only installations remain supported.
+Porter does not replace or promote the serving models. The legacy dataset contains:
 
 - 25,000 delivery records.
 - 9 delivery partners and 5 regions.
@@ -218,6 +219,18 @@ The archived dataset contains:
 - Partner, package, vehicle, mode, region, weather, distance, weight, expected-time, rating, traffic, peak-hour, and rider-workload information.
 
 The following outcome or derived fields are excluded from model inputs to reduce target leakage: `delivery_time_minutes`, `delivery_status`, `ETA_Minutes`, `Delay_Risk`, and `Delivery_Intelligence_Score`.
+
+### Find and show the original CSV files
+
+Open `Unified Intelligence.code-workspace` in VS Code to use this main project and
+show Git-ignored source CSVs in Explorer. All three datasets are in `data/raw/`.
+In **Operations**, the **Project datasets · CSV preview & download** area lists
+inventory, legacy delivery and Porter with their actual row counts, original
+columns, file locations, verified checksums and distinct purposes. Preview original
+rows or download the complete unchanged CSV. **View Porter ETA results** opens
+**Model evaluation → ETA research benchmark**, which also includes these source
+controls. Previewing is read-only and never starts import, training or promotion.
+See [dataset visibility](docs/dataset-library.md) for the API and review walkthrough.
 
 ## Model implementation
 
@@ -396,9 +409,11 @@ pip install --no-deps -e .
 ```
 
 The raw CSVs and trained model binaries are not part of a fresh Git checkout. Place
-`supply_chain_dataset1.csv` and `Porter_Delivery_Time_Estimation.csv` in `data/raw/`.
-For legacy-model compatibility, place `Quick_Commerce_Delivery_Logistics.csv` in
-`data/archive/legacy_delivery/`. Put the four `.joblib` files named in
+`supply_chain_dataset1.csv`, `Porter_Delivery_Time_Estimation.csv` and
+`Quick_Commerce_Delivery_Logistics.csv` in `data/raw/`. An existing archive-only
+legacy delivery setup can still import/train, but restore its unchanged CSV to
+`data/raw/` to expose it in the dataset library and pass artifact verification.
+Put the four `.joblib` files named in
 [`artifacts/manifest.json`](artifacts/manifest.json) in `models/`.
 From `backend/`, run `python -m unified_intelligence.artifacts verify` to
 check their sizes and SHA-256 hashes. Once the CSVs are available, you can create the

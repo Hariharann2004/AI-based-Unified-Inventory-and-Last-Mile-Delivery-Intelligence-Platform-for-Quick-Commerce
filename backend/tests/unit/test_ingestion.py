@@ -4,7 +4,11 @@ import io
 
 import pytest
 
-from unified_intelligence.application.ingestion_service import MAX_BYTES, IngestionService
+from unified_intelligence.application.ingestion_service import (
+    MAX_BYTES,
+    IngestionService,
+    local_dataset_path,
+)
 from unified_intelligence.infrastructure.persistence.workbench_store import WorkbenchStore
 
 INVENTORY = {
@@ -134,3 +138,15 @@ def test_local_import_api_and_missing_artifacts(client, monkeypatch, work_store,
     # Porter is not compatible with the legacy importer and must not be substituted.
     (raw / "Porter_Delivery_Time_Estimation.csv").write_bytes(b"created_at\n2025-01-01\n")
     assert client.post("/api/workbench/imports/delivery").status_code == 201
+
+
+def test_restored_raw_delivery_source_is_preferred(tmp_path):
+    raw = tmp_path / "data/raw"
+    archive = tmp_path / "data/archive/legacy_delivery"
+    raw.mkdir(parents=True)
+    archive.mkdir(parents=True)
+    name = "Quick_Commerce_Delivery_Logistics.csv"
+    (raw / name).write_bytes(csv_bytes([DELIVERY]))
+    (archive / name).write_bytes(csv_bytes([{**DELIVERY, "delivery_id": "ARCHIVE"}]))
+    assert local_dataset_path("delivery", tmp_path) == raw / name
+    assert local_dataset_path("inventory", tmp_path) == raw / "supply_chain_dataset1.csv"

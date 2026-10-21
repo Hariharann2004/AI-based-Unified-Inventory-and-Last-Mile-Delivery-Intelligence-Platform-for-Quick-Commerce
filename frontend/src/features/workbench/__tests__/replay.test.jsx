@@ -122,3 +122,53 @@ it("retains a committed cursor when paused during an in-flight step", async () =
   expect(screen.getByText("5 / 10 records")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Advance 5 records" })).toBeEnabled();
 });
+
+it("keeps filters while advancing without changing replay requests and resets views for new runs", async () => {
+  const fallback = request.getMockImplementation();
+  let starts = 0;
+  request.mockImplementation(async (path, options) => {
+    if (path === "/replays") {
+      starts += 1;
+      return { run_id: `run-${starts}`, total: 20, cursor: 0, status: "ready", events: [] };
+    }
+    if (path.includes("/steps")) {
+      const cursor = options.data.expected_cursor + 5;
+      return {
+        run_id: "run-1",
+        total: 20,
+        cursor,
+        status: "running",
+        events: Array.from({ length: cursor }, (_, index) => ({
+          record_id: `source:${index}`,
+          case_id: `case-${index}`,
+          status: "processed",
+          priority: index % 5 === 0 ? "Critical" : "Normal",
+        })),
+      };
+    }
+    return fallback(path, options);
+  });
+  setup();
+  await userEvent.click(screen.getByRole("button", { name: "Prepare step-by-step replay" }));
+  await userEvent.selectOptions(screen.getByLabelText("Filter replay priority"), "Critical");
+  await userEvent.selectOptions(screen.getByLabelText("Sort replay results"), "highest");
+  await userEvent.click(screen.getByRole("button", { name: "Advance 5 records" }));
+  expect(await screen.findByText("5 / 20 records")).toBeInTheDocument();
+  expect(screen.getAllByText("Critical priority")).toHaveLength(1);
+  await userEvent.click(screen.getByRole("button", { name: "Advance 5 records" }));
+  expect(await screen.findByText("10 / 20 records")).toBeInTheDocument();
+  expect(screen.getAllByText("Critical priority")).toHaveLength(2);
+  expect(screen.getByLabelText("Filter replay priority")).toHaveValue("Critical");
+  expect(request).toHaveBeenCalledWith("/replays/run-1/steps", {
+    method: "POST",
+    data: { expected_cursor: 5, count: 5 },
+  });
+  await userEvent.click(screen.getByRole("button", { name: "Prepare step-by-step replay" }));
+  expect(await screen.findByText("0 / 20 records")).toBeInTheDocument();
+  expect(screen.getByLabelText("Filter replay priority")).toHaveValue("all");
+  expect(screen.getByLabelText("Sort replay results")).toHaveValue("recorded");
+  expect(request).toHaveBeenLastCalledWith("/replays", {
+    method: "POST",
+    data: { kind: "inventory", import_id: "i1", limit: 100 },
+  });
+});

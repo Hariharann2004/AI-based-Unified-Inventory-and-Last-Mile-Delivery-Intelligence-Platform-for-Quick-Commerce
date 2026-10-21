@@ -533,6 +533,33 @@
   font-size: 13px;
   margin: 25px 0 12px;
 }
+.workbench .replay-priority-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+.workbench .replay-priority-counts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.workbench .replay-priority-counts strong {
+  font-size: 20px;
+}
+.workbench .replay-event-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .workbench progress {
   width: 100%;
   height: 12px;

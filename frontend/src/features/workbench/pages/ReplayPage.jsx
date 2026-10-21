@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { request } from "../api/client.js";
+import { ReplayEvents } from "../components/ReplayEvents.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 
@@ -176,21 +177,7 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
             <p className="provenance">
               {run.sequence_note} · recorded data · model checksums pinned for this run
             </p>
-            <ol className="timeline" aria-label="Replay events">
-              {run.events.slice(-10).map((event, index) => (
-                <li key={index}>
-                  <strong>
-                    {event.status === "failed" ? "Processing failed" : `${event.priority} priority`}
-                  </strong>
-                  <span>{event.error || event.record_id}</span>
-                  {event.case_id && (
-                    <button className="text-button" onClick={() => openCases(event.case_id)}>
-                      Open replay case →
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ol>
+            <ReplayEvents key={run.run_id} events={run.events} openCases={openCases} />
           </>
         ) : (
           <p className="empty">

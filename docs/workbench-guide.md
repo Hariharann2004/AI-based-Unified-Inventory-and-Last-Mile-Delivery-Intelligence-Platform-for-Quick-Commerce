@@ -24,10 +24,18 @@ This is local historical automation, not an always-on live production integratio
 5. In Replay, prepare a step-by-step run, advance five records, then try automatic
    replay and pause/continue. The UI caps runs at 100 records; the API supports 500.
    Inventory uses recorded dates; delivery uses source-row order, not verified time.
-   Filter results by Critical, High or Low (Normal), or sort by priority. Counts
+   Optional start/end dates select a different inventory period; leave either
+   boundary empty for an open-ended range. The run shows its actual date coverage
+   and how many records matched before the 100-record cap. Delivery has no date filter.
+   Filter results by Critical, High or Normal, or sort by priority. Counts
    cover all processed events in this run; previous/next controls browse matching
    results. Filters never change the actual priorities or replay sequence. See
    [replay priority controls](replay-priorities.md) for details and empty states.
+   The separate Mixed-priority demonstration loads genuine saved historical cases
+   across periods, up to three per available priority by default. It excludes
+   synthetic scenarios/replay copies and is labelled as selected evidence, not a
+   representative sample, fresh predictions or an accuracy evaluation. See
+   [replay modes](replay-modes.md) for selection rules and API details.
 6. Run Depleted stock, Extended supplier lead time or Peak-hour traffic pressure.
    Combined stress requires two selected records and an explicit mapping reason;
    it never claims the independent datasets describe the same real order.

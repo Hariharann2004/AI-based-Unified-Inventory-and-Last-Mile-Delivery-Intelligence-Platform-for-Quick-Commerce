@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { request } from "../api/client.js";
+import { MixedPriorityDemo } from "../components/MixedPriorityDemo.jsx";
 import { ReplayEvents } from "../components/ReplayEvents.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
@@ -15,6 +16,9 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
   const [inventoryId, setInventoryId] = useState("");
   const [deliveryId, setDeliveryId] = useState("");
   const [mappingReason, setMappingReason] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const invalidDates = kind === "inventory" && startDate && endDate && startDate > endDate;
   const selected =
     imports.find((item) => item.kind === kind && item.import_id === importId) ||
     imports.find((item) => item.kind === kind);
@@ -70,7 +74,13 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
     const next = await task.run(() =>
       request("/replays", {
         method: "POST",
-        data: { kind, import_id: selected.import_id, limit: 100 },
+        data: {
+          kind,
+          import_id: selected.import_id,
+          limit: 100,
+          ...(kind === "inventory" && startDate ? { start_date: startDate } : {}),
+          ...(kind === "inventory" && endDate ? { end_date: endDate } : {}),
+        },
       }),
     );
     if (next) {
@@ -126,8 +136,8 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
           {task.error || replayError || scenarios.error || inventories.error || deliveries.error}
         </p>
       )}
-      <div className="surface">
-        <h2>Historical replay</h2>
+      <section className="surface" aria-labelledby="historical-replay-title">
+        <h2 id="historical-replay-title">Historical replay</h2>
         <SourcePicker
           imports={imports}
           kind={kind}
@@ -135,16 +145,59 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
           selected={selected}
           setSelected={setImportId}
         />
+        {kind === "inventory" ? (
+          <>
+            <div className="toolbar">
+              <label>
+                Replay start date (optional)
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                  disabled={task.busy || advancing || (automatic && !completed)}
+                />
+              </label>
+              <label>
+                Replay end date (optional)
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  disabled={task.busy || advancing || (automatic && !completed)}
+                />
+              </label>
+            </div>
+            <p className="muted">
+              Dates apply to the next replay, including both boundary dates. Leave either blank for
+              an open-ended range. Each run uses up to the first 100 matching records in
+              chronological order.
+            </p>
+            {invalidDates && (
+              <p className="error" role="alert">
+                Start date must be on or before end date.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="muted">
+            Delivery replay uses source-row order. Date filtering is unavailable because verified
+            delivery timestamps are absent from this operational dataset.
+          </p>
+        )}
         <div className="toolbar">
           <button
             className="primary"
-            disabled={!selected || task.busy || advancing || (automatic && !completed)}
+            disabled={
+              !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
+            }
             onClick={() => start(true)}
           >
             Start automatic replay
           </button>
           <button
-            disabled={!selected || task.busy || advancing || (automatic && !completed)}
+            disabled={
+              !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
+            }
             onClick={() => start(false)}
           >
             Prepare step-by-step replay
@@ -177,6 +230,20 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
             <p className="provenance">
               {run.sequence_note} · recorded data · model checksums pinned for this run
             </p>
+            {run.date_range && (
+              <p className="provenance">
+                Requested range: {run.date_range.start_date || "beginning"} to{" "}
+                {run.date_range.end_date || "latest"}. This run selects {run.total} of{" "}
+                {run.eligible_records} eligible records.
+                {run.selected_dates?.first && (
+                  <>
+                    {" "}
+                    Recorded dates: {run.selected_dates.first.slice(0, 10)} to{" "}
+                    {run.selected_dates.last.slice(0, 10)}.
+                  </>
+                )}
+              </p>
+            )}
             <ReplayEvents key={run.run_id} events={run.events} openCases={openCases} />
           </>
         ) : (
@@ -184,7 +251,8 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
             Choose a dataset and start a sequence of up to 100 stored records.
           </p>
         )}
-      </div>
+      </section>
+      <MixedPriorityDemo imports={imports} openCases={openCases} />
       <div className="surface">
         <h2>Scenario laboratory</h2>
         <p className="muted">

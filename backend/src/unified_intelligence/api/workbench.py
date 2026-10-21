@@ -8,6 +8,7 @@ from unified_intelligence.api.schemas.workbench import (
     BatchRequest,
     EvaluationRequest,
     ProcessingRequest,
+    ReplayDemonstrationRequest,
     ReplayRequest,
     ResumeProcessingRequest,
     ScenarioRequest,
@@ -25,6 +26,7 @@ from unified_intelligence.application.ingestion_service import (
     validate_kind,
 )
 from unified_intelligence.application.processing_service import ProcessingService
+from unified_intelligence.application.replay_demonstration_service import ReplayDemonstrationService
 from unified_intelligence.application.replay_service import ReplayConflict, ReplayService
 from unified_intelligence.application.research_report_service import ResearchReportService
 from unified_intelligence.application.scenario_service import SCENARIOS, ScenarioService
@@ -188,9 +190,13 @@ def replay_conflict(error):
 @workbench.post("/replays")
 def start_replay():
     value = payload(ReplayRequest)
-    return jsonify(
-        ReplayService(store(), batch_service()).start(value.kind, value.import_id, value.limit)
-    ), 201
+    return jsonify(ReplayService(store(), batch_service()).start(**value.model_dump())), 201
+
+
+@workbench.get("/replay-demonstrations")
+def replay_demonstration():
+    value = ReplayDemonstrationRequest.model_validate(request.args.to_dict())
+    return jsonify(ReplayDemonstrationService(store()).select(**value.model_dump()))
 
 
 @workbench.get("/replays/<run_id>")

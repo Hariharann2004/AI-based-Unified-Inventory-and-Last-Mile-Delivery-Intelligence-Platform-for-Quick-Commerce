@@ -31,7 +31,7 @@ it("filters all accumulated events before pagination, including older Critical c
   expect(counts.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
     "Critical1",
     "High1",
-    "Low (Normal)13",
+    "Normal13",
     "Processing failures1",
   ]);
   expect(screen.getByRole("status")).toHaveTextContent("Showing 1–10 of 16 matching events");
@@ -129,7 +129,7 @@ it("explains missing priorities without relabelling Normal cases or creating new
   expect(screen.getByText("No processing failures in this run.")).toBeInTheDocument();
   rerender(<ReplayEvents events={[event(2, "High")]} openCases={vi.fn()} />);
   await userEvent.selectOptions(screen.getByLabelText("Filter replay priority"), "Normal");
-  expect(screen.getByText(/No Low \(Normal\)-priority cases/)).toBeInTheDocument();
+  expect(screen.getByText(/No Normal-priority cases/)).toBeInTheDocument();
 });
 
 it("shows initial guidance before a replay processes any records", () => {

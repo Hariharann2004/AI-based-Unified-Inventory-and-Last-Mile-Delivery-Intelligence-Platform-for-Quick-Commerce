@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { request } from "../api/client.js";
@@ -171,4 +171,63 @@ it("keeps filters while advancing without changing replay requests and resets vi
     method: "POST",
     data: { kind: "inventory", import_id: "i1", limit: 100 },
   });
+});
+
+it("validates date ranges and sends dates only for a new inventory replay", async () => {
+  setup();
+  const historical = within(screen.getByRole("region", { name: "Historical replay" }));
+  fireEvent.change(screen.getByLabelText("Replay start date (optional)"), {
+    target: { value: "2024-03-01" },
+  });
+  fireEvent.change(screen.getByLabelText("Replay end date (optional)"), {
+    target: { value: "2024-02-01" },
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent("Start date must be on or before end date.");
+  expect(screen.getByRole("button", { name: "Prepare step-by-step replay" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Replay end date (optional)"), {
+    target: { value: "2024-03-31" },
+  });
+  await userEvent.click(screen.getByRole("button", { name: "Prepare step-by-step replay" }));
+  expect(request).toHaveBeenCalledWith("/replays", {
+    method: "POST",
+    data: {
+      kind: "inventory",
+      import_id: "i1",
+      limit: 100,
+      start_date: "2024-03-01",
+      end_date: "2024-03-31",
+    },
+  });
+  await userEvent.selectOptions(historical.getByLabelText("Record type"), "delivery");
+  expect(screen.queryByLabelText("Replay start date (optional)")).not.toBeInTheDocument();
+  expect(screen.getByText(/Date filtering is unavailable/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Prepare step-by-step replay" }));
+  expect(request).toHaveBeenLastCalledWith("/replays", {
+    method: "POST",
+    data: { kind: "delivery", import_id: "d1", limit: 100 },
+  });
+});
+
+it("shows the persisted date selection and eligible-record count for the active run", async () => {
+  const fallback = request.getMockImplementation();
+  request.mockImplementation((path, options) =>
+    path === "/replays"
+      ? Promise.resolve({
+          run_id: "dated",
+          total: 100,
+          cursor: 0,
+          status: "ready",
+          events: [],
+          date_range: { start_date: "2024-03-01", end_date: "2024-03-31" },
+          eligible_records: 500,
+          selected_dates: { first: "2024-03-01", last: "2024-03-10" },
+        })
+      : fallback(path, options),
+  );
+  setup();
+  await userEvent.click(screen.getByRole("button", { name: "Prepare step-by-step replay" }));
+  expect(await screen.findByText(/This run selects 100 of 500 eligible records/)).toHaveTextContent(
+    "Recorded dates: 2024-03-01 to 2024-03-10",
+  );
+  expect(screen.getByText(/Requested range: 2024-03-01 to 2024-03-31/)).toBeInTheDocument();
 });

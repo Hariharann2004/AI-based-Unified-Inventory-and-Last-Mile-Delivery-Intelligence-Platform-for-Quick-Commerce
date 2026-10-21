@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import date
 
 from unified_intelligence.application.batch_service import identity
 from unified_intelligence.infrastructure.persistence.workbench_store import encode, now
@@ -22,16 +23,33 @@ class ReplayService:
     def snapshot(self):
         return {p.name: identity(p)["sha256"] for p in self.batch.model_directory.glob("*.joblib")}
 
-    def start(self, kind, import_id, limit):
+    def start(self, kind, import_id, limit, *, start_date=None, end_date=None):
+        start_date = date.fromisoformat(str(start_date)) if start_date else None
+        end_date = date.fromisoformat(str(end_date)) if end_date else None
+        if (start_date or end_date) and kind != "inventory":
+            raise ValueError("Date ranges require inventory records with recorded dates.")
+        if start_date and end_date and start_date > end_date:
+            raise ValueError("Start date must be on or before end date.")
+        where, parameters = "kind=? AND import_id=?", [kind, import_id]
+        for value, operator in [(start_date, ">="), (end_date, "<=")]:
+            if value:
+                where += f" AND substr(occurred_at,1,10) {operator} ?"
+                parameters.append(value.isoformat())
         with self.store.connection() as connection:
             connection.executescript(SCHEMA)
+            eligible = connection.execute(
+                "SELECT count(*) FROM operational_records WHERE " + where, parameters
+            ).fetchone()[0]
             rows = connection.execute(
-                "SELECT record_id FROM operational_records WHERE kind=? AND import_id=? "
-                "ORDER BY occurred_at,position LIMIT ?",
-                (kind, import_id, limit),
+                "SELECT record_id,occurred_at FROM operational_records WHERE "
+                + where
+                + " ORDER BY occurred_at,position LIMIT ?",
+                [*parameters, limit],
             ).fetchall()
             if not rows:
-                raise ValueError("No records for this dataset import and kind.")
+                raise ValueError(
+                    "No records for this dataset import, kind and selected date range."
+                )
             run = {
                 "run_id": str(uuid.uuid4()),
                 "created_at": now(),
@@ -48,6 +66,15 @@ class ReplayService:
                 if kind == "inventory"
                 else "Source row order; no verified delivery timestamps",
                 "model_snapshot": self.snapshot(),
+                "date_range": {
+                    "start_date": start_date.isoformat() if start_date else None,
+                    "end_date": end_date.isoformat() if end_date else None,
+                },
+                "selected_dates": {
+                    "first": rows[0]["occurred_at"],
+                    "last": rows[-1]["occurred_at"],
+                },
+                "eligible_records": eligible,
             }
             connection.execute(
                 "INSERT INTO replays VALUES (?,?,?)",
@@ -80,7 +107,8 @@ class ReplayService:
         selected = run["record_ids"][run["cursor"] : run["cursor"] + count]
         for record_id in selected:
             try:
-                evidence = self.batch.assess(self.store.record(record_id))
+                record = self.store.record(record_id)
+                evidence = self.batch.assess(record)
                 evidence["provenance"] = "historical_replay:" + run_id
                 case = self.store.save_case(evidence)
                 event = {
@@ -88,6 +116,7 @@ class ReplayService:
                     "case_id": case["case_id"],
                     "priority": case["priority"],
                     "status": "processed",
+                    "occurred_at": record.get("occurred_at"),
                 }
             except (ValueError, KeyError, FileNotFoundError) as error:
                 event = {"record_id": record_id, "status": "failed", "error": str(error)}

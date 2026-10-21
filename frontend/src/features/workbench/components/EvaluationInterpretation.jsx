@@ -1,4 +1,5 @@
 import { ComparisonBars } from "./EvidenceCharts.jsx";
+import { PanelHeading } from "./WorkspacePrimitives.jsx";
 
 const percentage = (value) => (Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : "—");
 const score = (value) => (Number.isFinite(value) ? value.toFixed(3) : "—");
@@ -13,8 +14,12 @@ export function EvaluationInterpretation({ current, report, kind }) {
   const majorityShare = Math.max(matrix[0][0] + matrix[0][1], positives) / count;
   return (
     <>
-      <div className="surface">
-        <h3>What these scores mean</h3>
+      <div className="surface interpretation-panel">
+        <PanelHeading
+          icon="shield"
+          eyebrow="Interpret before concluding"
+          title="What these scores mean"
+        />
         <p>
           Accuracy counts all correct decisions. With many normal deliveries, high accuracy can
           still miss every delayed delivery. Read recall, F1 and the confusion matrix together. No

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { request } from "../api/client.js";
@@ -39,7 +39,11 @@ it("shows Porter source location, original CSV link and a research shortcut", as
   const openResearch = vi.fn();
   render(<DatasetLibrary openResearch={openResearch} />);
   expect(await screen.findByText(porter.relative_path)).toBeInTheDocument();
-  expect(screen.getByText(/197,428 original rows/)).toBeInTheDocument();
+  const metadata = within(screen.getByRole("group", { name: "Original source file details" }));
+  expect(metadata.getByText("197,428")).toBeInTheDocument();
+  expect(metadata.getByText("original rows")).toBeInTheDocument();
+  expect(metadata.getByText("3")).toBeInTheDocument();
+  expect(metadata.getByText("columns")).toBeInTheDocument();
   const link = screen.getByRole("link", { name: "Download original CSV" });
   expect(link).toHaveAttribute("href", expect.stringContaining("/datasets/porter-eta/download"));
   expect(link).toHaveAttribute("download", porter.filename);

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { request } from "../api/client.js";
 import { useRemote, useTask } from "../hooks/useRemote.js";
+import { PanelHeading } from "./WorkspacePrimitives.jsx";
+import { WorkbenchIcon } from "./WorkbenchIcon.jsx";
 
 const ACTIVE = ["queued", "running", "cancelling"];
 
@@ -35,16 +37,14 @@ export function ProcessingJobs({ selected, openCases }) {
     }
   }
   return (
-    <div className="surface processing-panel">
+    <div className="surface processing-panel" id="operations-processing">
       <div className="section-heading">
-        <div>
-          <p className="eyebrow">Full import / background inference</p>
-          <h2>Process the whole dataset</h2>
-          <p className="muted">
-            One action processes every accepted record in this import, including records outside the
-            visible page and current filters. This generates cases, not accuracy scores.
-          </p>
-        </div>
+        <PanelHeading
+          icon="play"
+          eyebrow="Full import / background inference"
+          title="Process the whole dataset"
+          description="Analyze every accepted record, not just the visible page. Generates cases, not accuracy scores."
+        />
         <button
           className="primary"
           disabled={!selected || !selected.accepted_rows || task.busy || active}
@@ -52,6 +52,7 @@ export function ProcessingJobs({ selected, openCases }) {
             act("/processing-jobs", { kind: selected.kind, import_id: selected.import_id })
           }
         >
+          <WorkbenchIcon name="play" />
           Process all {selected?.accepted_rows.toLocaleString() || 0} records
         </button>
       </div>

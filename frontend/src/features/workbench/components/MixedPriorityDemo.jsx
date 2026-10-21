@@ -3,6 +3,7 @@ import { request } from "../api/client.js";
 import { useTask } from "../hooks/useRemote.js";
 import { ReplayEvents } from "./ReplayEvents.jsx";
 import { SourcePicker } from "./SourcePicker.jsx";
+import { PanelHeading } from "./WorkspacePrimitives.jsx";
 
 export function MixedPriorityDemo({ imports, openCases }) {
   const [kind, setKind] = useState("inventory");
@@ -25,8 +26,18 @@ export function MixedPriorityDemo({ imports, openCases }) {
   }
 
   return (
-    <section className="surface" aria-labelledby="mixed-priority-title">
-      <h2 id="mixed-priority-title">Mixed-priority demonstration</h2>
+    <section
+      className="surface demonstration-panel"
+      id="mixed-priority-demo"
+      aria-labelledby="mixed-priority-title"
+    >
+      <PanelHeading
+        icon="layers"
+        eyebrow="02 / Deliberately selected cases"
+        title="Mixed-priority demonstration"
+        id="mixed-priority-title"
+        description="See Critical, High and Normal assessments together without changing their predictions."
+      />
       <p className="warning">
         Selected demonstration only — not a representative sample, chronological replay or accuracy
         evaluation. Uses genuine saved historical assessments without changing their predictions.

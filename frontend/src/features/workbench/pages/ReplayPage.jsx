@@ -4,6 +4,7 @@ import { MixedPriorityDemo } from "../components/MixedPriorityDemo.jsx";
 import { ReplayEvents } from "../components/ReplayEvents.jsx";
 import { SourcePicker } from "../components/SourcePicker.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
+import { PageIntro, PanelHeading, WorkflowGuide } from "../components/WorkspacePrimitives.jsx";
 
 export function ReplayPage({ imports, version, refresh, openCases }) {
   const [kind, setKind] = useState("inventory");
@@ -120,103 +121,136 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
   }
   const selectedScenario = (scenarios.data || []).find((item) => item.id === scenario);
   return (
-    <section>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">03 / Reproducible operational sequences</p>
-          <h1>Replay & scenarios</h1>
-          <p className="muted">
-            Recorded sequences and labelled stress tests. No live feeds or accuracy claims.
-          </p>
-        </div>
-        <span className="mode-label">Simulation environment</span>
-      </div>
+    <section className="replay-page">
+      <PageIntro
+        eyebrow="03 / Reproducible operational sequences"
+        title="Replay & scenarios"
+        description="Explore what happened. Compare saved priorities. Test what could happen next."
+        icon="replay"
+        mode="Simulation environment"
+        context="Recorded sequences and labelled stress tests. No live feeds or accuracy claims."
+      />
+      <WorkflowGuide
+        label="Replay and scenario modes"
+        steps={[
+          {
+            title: "Historical replay",
+            description: "Follow recorded source order",
+            href: "#historical-replay",
+          },
+          {
+            title: "Selected demonstration",
+            description: "Explore genuine saved priorities",
+            href: "#mixed-priority-demo",
+          },
+          {
+            title: "Scenario laboratory",
+            description: "Test copies, not the original data",
+            href: "#scenario-laboratory",
+          },
+        ]}
+      />
       {(task.error || replayError || scenarios.error || inventories.error || deliveries.error) && (
         <p className="error" role="alert">
           {task.error || replayError || scenarios.error || inventories.error || deliveries.error}
         </p>
       )}
-      <section className="surface" aria-labelledby="historical-replay-title">
-        <h2 id="historical-replay-title">Historical replay</h2>
-        <SourcePicker
-          imports={imports}
-          kind={kind}
-          setKind={setKind}
-          selected={selected}
-          setSelected={setImportId}
+      <section
+        className="surface replay-panel"
+        id="historical-replay"
+        aria-labelledby="historical-replay-title"
+      >
+        <PanelHeading
+          icon="replay"
+          eyebrow="01 / Recorded sequence"
+          title="Historical replay"
+          id="historical-replay-title"
+          description="Choose a period and follow how recorded operations are assessed."
         />
-        {kind === "inventory" ? (
-          <>
-            <div className="toolbar">
-              <label>
-                Replay start date (optional)
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  disabled={task.busy || advancing || (automatic && !completed)}
-                />
-              </label>
-              <label>
-                Replay end date (optional)
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  disabled={task.busy || advancing || (automatic && !completed)}
-                />
-              </label>
-            </div>
-            <p className="muted">
-              Dates apply to the next replay, including both boundary dates. Leave either blank for
-              an open-ended range. Each run uses up to the first 100 matching records in
-              chronological order.
-            </p>
-            {invalidDates && (
-              <p className="error" role="alert">
-                Start date must be on or before end date.
+        <div className="replay-configuration">
+          <div className="replay-source">
+            <SourcePicker
+              imports={imports}
+              kind={kind}
+              setKind={setKind}
+              selected={selected}
+              setSelected={setImportId}
+            />
+            {kind === "inventory" ? (
+              <>
+                <div className="toolbar">
+                  <label>
+                    Replay start date (optional)
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      disabled={task.busy || advancing || (automatic && !completed)}
+                    />
+                  </label>
+                  <label>
+                    Replay end date (optional)
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.target.value)}
+                      disabled={task.busy || advancing || (automatic && !completed)}
+                    />
+                  </label>
+                </div>
+                <p className="muted">
+                  Dates apply to the next replay, including both boundary dates. Leave either blank
+                  for an open-ended range. Each run uses up to the first 100 matching records in
+                  chronological order.
+                </p>
+                {invalidDates && (
+                  <p className="error" role="alert">
+                    Start date must be on or before end date.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="muted">
+                Delivery replay uses source-row order. Date filtering is unavailable because
+                verified delivery timestamps are absent from this operational dataset.
               </p>
             )}
-          </>
-        ) : (
-          <p className="muted">
-            Delivery replay uses source-row order. Date filtering is unavailable because verified
-            delivery timestamps are absent from this operational dataset.
-          </p>
-        )}
-        <div className="toolbar">
-          <button
-            className="primary"
-            disabled={
-              !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
-            }
-            onClick={() => start(true)}
-          >
-            Start automatic replay
-          </button>
-          <button
-            disabled={
-              !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
-            }
-            onClick={() => start(false)}
-          >
-            Prepare step-by-step replay
-          </button>
-          {run && (
-            <>
-              <button disabled={task.busy || advancing || completed || automatic} onClick={step}>
-                Advance 5 records
-              </button>
-              {automatic && !completed && (
-                <button onClick={() => setAutomatic(false)}>Pause replay</button>
-              )}
-              {!automatic && !completed && (
-                <button disabled={advancing} onClick={() => setAutomatic(true)}>
-                  Continue automatically
+          </div>
+          <div className="toolbar replay-actions">
+            <p className="option-label">Choose how to run</p>
+            <button
+              className="primary"
+              disabled={
+                !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
+              }
+              onClick={() => start(true)}
+            >
+              Start automatic replay
+            </button>
+            <button
+              disabled={
+                !selected || !!invalidDates || task.busy || advancing || (automatic && !completed)
+              }
+              onClick={() => start(false)}
+            >
+              Prepare step-by-step replay
+            </button>
+            {run && (
+              <>
+                <button disabled={task.busy || advancing || completed || automatic} onClick={step}>
+                  Advance 5 records
                 </button>
-              )}
-            </>
-          )}
+                {automatic && !completed && (
+                  <button onClick={() => setAutomatic(false)}>Pause replay</button>
+                )}
+                {!automatic && !completed && (
+                  <button disabled={advancing} onClick={() => setAutomatic(true)}>
+                    Continue automatically
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
         {run ? (
           <>
@@ -253,12 +287,13 @@ export function ReplayPage({ imports, version, refresh, openCases }) {
         )}
       </section>
       <MixedPriorityDemo imports={imports} openCases={openCases} />
-      <div className="surface">
-        <h2>Scenario laboratory</h2>
-        <p className="muted">
-          Presets modify copies of source records. Model outputs are measured, never forced to match
-          a preferred result.
-        </p>
+      <div className="surface scenario-panel" id="scenario-laboratory">
+        <PanelHeading
+          icon="experiment"
+          eyebrow="03 / Controlled what-if test"
+          title="Scenario laboratory"
+          description="Presets modify copies of source records. Model outputs are measured, never forced to match a preferred result."
+        />
         <div className="source-picker">
           <label>
             Stress scenario

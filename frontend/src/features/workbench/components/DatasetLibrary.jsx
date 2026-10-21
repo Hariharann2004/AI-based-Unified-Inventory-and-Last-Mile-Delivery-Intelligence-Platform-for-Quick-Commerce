@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { API_BASE_URL } from "../../../shared/config/environment.js";
 import { useRemote } from "../hooks/useRemote.js";
+import { PanelHeading } from "./WorkspacePrimitives.jsx";
+import { WorkbenchIcon } from "./WorkbenchIcon.jsx";
 
 export function DatasetLibrary({ openResearch }) {
   const [datasetId, setDatasetId] = useState("porter-eta");
@@ -24,8 +26,12 @@ export function DatasetLibrary({ openResearch }) {
 
   return (
     <section className="surface dataset-library" aria-labelledby="dataset-library-title">
-      <p className="eyebrow">Original source files / read-only</p>
-      <h2 id="dataset-library-title">Project datasets · CSV preview & download</h2>
+      <PanelHeading
+        icon="database"
+        eyebrow="Original source files / read-only"
+        title="Project datasets · CSV preview & download"
+        id="dataset-library-title"
+      />
       <p className="muted">
         Inventory, legacy delivery and Porter are separate sources. Browse or download the original
         CSV here without importing it or changing a model.
@@ -50,10 +56,11 @@ export function DatasetLibrary({ openResearch }) {
               ))}
             </select>
           </label>
-          <p>
+          <p className="dataset-role">
             <strong>{selected.role}</strong> — {selected.purpose}
           </p>
-          <p className="provenance">
+          <p className="provenance dataset-file">
+            <WorkbenchIcon name="package" />
             VS Code / Excel file: <code>{selected.relative_path}</code>
           </p>
           <p className="warning">{selected.warning}</p>
@@ -61,13 +68,33 @@ export function DatasetLibrary({ openResearch }) {
             <p className="error">{selected.error}</p>
           ) : (
             <>
-              <p className="provenance">
-                {selected.row_count.toLocaleString("en-US")} original rows ·{" "}
-                {selected.columns.length} columns ·{(selected.size_bytes / 1024 / 1024).toFixed(2)}{" "}
-                MiB · source checksum verified
+              <div
+                className="library-metadata"
+                role="group"
+                aria-label="Original source file details"
+              >
+                <div>
+                  <strong>{selected.row_count.toLocaleString("en-US")}</strong>
+                  <span>original rows</span>
+                </div>
+                <div>
+                  <strong>{selected.columns.length}</strong>
+                  <span>columns</span>
+                </div>
+                <div>
+                  <strong>
+                    {(selected.size_bytes / 1024 / 1024).toFixed(2)}
+                    <small> MiB</small>
+                  </strong>
+                  <span>file size</span>
+                </div>
+              </div>
+              <p className="provenance checksum-note">
+                <WorkbenchIcon name="shield" /> source checksum verified
               </p>
-              <div className="toolbar">
+              <div className="toolbar library-actions">
                 <button onClick={() => setPreviewOpen(!previewOpen)}>
+                  <WorkbenchIcon name="database" />
                   {previewOpen ? "Hide CSV preview" : "Preview original CSV"}
                 </button>
                 <a
@@ -80,6 +107,7 @@ export function DatasetLibrary({ openResearch }) {
                 {selected.dataset_id === "porter-eta" && openResearch && (
                   <button className="primary" onClick={openResearch}>
                     View Porter ETA results
+                    <WorkbenchIcon name="arrow" />
                   </button>
                 )}
               </div>

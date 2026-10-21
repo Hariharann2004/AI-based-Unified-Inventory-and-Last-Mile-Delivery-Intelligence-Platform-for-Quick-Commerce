@@ -3,15 +3,16 @@ import { DatasetLibrary } from "../components/DatasetLibrary.jsx";
 import { ComparisonBars, EvidencePlot } from "../components/EvidenceCharts.jsx";
 import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote } from "../hooks/useRemote.js";
+import { PanelHeading, MetricCard } from "../components/WorkspacePrimitives.jsx";
 
 const number = (value) => (Number.isFinite(value) ? value.toFixed(3) : "—");
 
 export function ResearchBenchmarkPage() {
   return (
-    <>
-      <DatasetLibrary />
+    <div className="research-workspace">
       <ResearchEvidence />
-    </>
+      <DatasetLibrary />
+    </div>
   );
 }
 
@@ -43,13 +44,13 @@ function ResearchEvidence() {
     );
   return (
     <section>
-      <div className="section-heading">
-        <div>
-          <h2>Porter ETA research benchmark</h2>
-          <p className="muted">
-            Saved, separate research evidence. Not a live delivery feed or a promoted model.
-          </p>
-        </div>
+      <div className="section-heading research-heading">
+        <PanelHeading
+          icon="experiment"
+          eyebrow="Separate research / saved evidence"
+          title="Porter ETA research benchmark"
+          description="Saved, separate research evidence. Not a live delivery feed or a promoted model."
+        />
         <span className="mode-label">ETA regression · minutes</span>
       </div>
       <div className="surface source-picker">
@@ -88,28 +89,20 @@ function ResearchEvidence() {
         </p>
       )}
       <div className="metrics evaluation-metrics">
-        <div>
-          <span>ETA MAE</span>
-          <strong>
-            {number(current.test.mae_minutes)}
-            <small> min</small>
-          </strong>
-        </div>
-        <div>
-          <span>ETA RMSE</span>
-          <strong>
-            {number(current.test.rmse_minutes)}
-            <small> min</small>
-          </strong>
-        </div>
-        <div>
-          <span>R² · not accuracy</span>
-          <strong>{number(current.test.r2)}</strong>
-        </div>
-        <div>
-          <span>Within ±10 minutes</span>
-          <strong>{(current.test.within_10_minutes_fraction * 100).toFixed(1)}%</strong>
-        </div>
+        <MetricCard icon="clock" label="ETA MAE">
+          {number(current.test.mae_minutes)}
+          <small> min</small>
+        </MetricCard>
+        <MetricCard icon="target" label="ETA RMSE" tone="blue">
+          {number(current.test.rmse_minutes)}
+          <small> min</small>
+        </MetricCard>
+        <MetricCard icon="evaluation" label="R² · not accuracy" tone="violet">
+          {number(current.test.r2)}
+        </MetricCard>
+        <MetricCard icon="shield" label="Within ±10 minutes" tone="amber">
+          {(current.test.within_10_minutes_fraction * 100).toFixed(1)}%
+        </MetricCard>
       </div>
       <p className="muted">
         MAE is the average absolute error; lower is better. RMSE emphasizes large errors. The

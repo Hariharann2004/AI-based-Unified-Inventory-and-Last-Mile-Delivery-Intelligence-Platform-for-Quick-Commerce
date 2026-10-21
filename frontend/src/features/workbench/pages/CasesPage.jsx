@@ -2,6 +2,8 @@ import { useState } from "react";
 import { request } from "../api/client.js";
 import { ComparisonBars } from "../components/EvidenceCharts.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
+import { PageIntro, MetricCard } from "../components/WorkspacePrimitives.jsx";
+import { WorkbenchIcon } from "../components/WorkbenchIcon.jsx";
 
 function Assessment({ evidence }) {
   if (evidence.kind === "unified")
@@ -26,27 +28,25 @@ function Assessment({ evidence }) {
     <div className="assessment-block">
       <h3>{inventory ? "Inventory assessment" : "Delivery assessment"}</h3>
       <div className="metrics">
-        <div>
-          <span>{inventory ? "Predicted daily demand" : "Predicted ETA"}</span>
-          <strong>
-            {inventory ? assessment.predicted_daily_demand : assessment.predicted_eta_minutes}{" "}
-            <small>{inventory ? "units/day" : "min"}</small>
-          </strong>
-        </div>
-        <div>
-          <span>{inventory ? "Stockout risk" : "Delay risk"}</span>
-          <strong>
-            {(probability * 100).toFixed(2)}%{" "}
-            <small>{inventory ? assessment.stockout_risk : assessment.delay_risk}</small>
-          </strong>
-        </div>
-        <div>
-          <span>{inventory ? "Health score · rule-based" : "Intelligence score · rule-based"}</span>
-          <strong>
-            {inventory ? assessment.inventory_health_score : assessment.delivery_intelligence_score}
-            <small> / 100</small>
-          </strong>
-        </div>
+        <MetricCard
+          icon={inventory ? "package" : "clock"}
+          label={inventory ? "Predicted daily demand" : "Predicted ETA"}
+        >
+          {inventory ? assessment.predicted_daily_demand : assessment.predicted_eta_minutes}{" "}
+          <small>{inventory ? "units/day" : "min"}</small>
+        </MetricCard>
+        <MetricCard icon="alert" tone="amber" label={inventory ? "Stockout risk" : "Delay risk"}>
+          {(probability * 100).toFixed(2)}%{" "}
+          <small>{inventory ? assessment.stockout_risk : assessment.delay_risk}</small>
+        </MetricCard>
+        <MetricCard
+          icon="shield"
+          tone="blue"
+          label={inventory ? "Health score · rule-based" : "Intelligence score · rule-based"}
+        >
+          {inventory ? assessment.inventory_health_score : assessment.delivery_intelligence_score}
+          <small> / 100</small>
+        </MetricCard>
       </div>
       <ComparisonBars
         title={inventory ? "Stock coverage calculation" : "Delivery time comparison"}
@@ -144,13 +144,15 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
     if (result) refresh();
   }
   return (
-    <section>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">02 / Evidence to action</p>
-          <h1>Case workspace</h1>
-          <p className="muted">Review recommendations and keep a traceable internal decision.</p>
-        </div>
+    <section className="cases-page">
+      <PageIntro
+        eyebrow="02 / Evidence to action"
+        title="Case workspace"
+        description="Understand the recommendation. Inspect the evidence. Record your decision."
+        icon="cases"
+        mode="Human review, by design"
+        context="Approval saves an internal draft. No external action is sent."
+      >
         <label>
           Queue status
           <select
@@ -166,7 +168,7 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
             <option value="">All statuses</option>
           </select>
         </label>
-      </div>
+      </PageIntro>
       {(queue.error || detail.error || task.error) && (
         <p role="alert" className="error">
           {queue.error || detail.error || task.error}
@@ -174,6 +176,9 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
       )}
       <div className="case-layout">
         <aside className="case-queue" aria-label="Prioritized case queue">
+          <h2 className="queue-title">
+            <WorkbenchIcon name="cases" /> Decision queue
+          </h2>
           <p className="eyebrow">{queue.data?.total || 0} cases · priority order</p>
           {(queue.data?.cases || []).map((item) => (
             <button
@@ -213,7 +218,7 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
         <article className="surface case-detail">
           {selected ? (
             <>
-              <div className="section-heading">
+              <div className="section-heading case-summary-heading">
                 <div>
                   <p className="eyebrow">{selected.evidence.provenance}</p>
                   <h2>
@@ -221,6 +226,7 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
                       ? "Combined simulated case"
                       : `${selected.kind} decision`}
                   </h2>
+                  <p className="case-reference">{selected.case_id}</p>
                 </div>
                 <span className={`badge ${selected.priority.toLowerCase()}`}>
                   {selected.priority} priority
@@ -244,11 +250,15 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
               ))}
               <Assessment evidence={selected.evidence} />
               <details>
-                <summary>How the models arrived at this prediction</summary>
+                <summary>
+                  <WorkbenchIcon name="evaluation" /> How the models arrived at this prediction
+                </summary>
                 <Explanations explanations={selected.evidence.explanations} />
               </details>
               <details>
-                <summary>Inputs, calculations and model identity</summary>
+                <summary>
+                  <WorkbenchIcon name="database" /> Inputs, calculations and model identity
+                </summary>
                 <pre>
                   {JSON.stringify(
                     {
@@ -261,67 +271,73 @@ export function CasesPage({ version, refresh, selectedId, setSelectedId }) {
                   )}
                 </pre>
               </details>
-              <h3>Internal action drafts</h3>
-              {selected.drafts.map((draft, index) => (
-                <div className="draft" key={index}>
-                  <strong>{draft.type.replaceAll("_", " ")}</strong>
-                  <span>
-                    {draft.quantity !== undefined
-                      ? `${draft.quantity} units · ${draft.warehouse}`
-                      : `ETA ${draft.eta_minutes} min`}{" "}
-                    · {draft.status}
-                  </span>
-                </div>
-              ))}
-              {!selected.drafts.length && (
-                <p className="muted">No action draft is required for this case.</p>
-              )}
-              <p className="muted">
-                Approval records a local draft only. No supplier order or customer message is sent.
-                Reviewer labels are not authenticated accounts.
-              </p>
-              {selected.status === "open" ? (
-                <>
-                  <div className="toolbar">
-                    <label>
-                      Reviewer label
-                      <input
-                        value={actor}
-                        maxLength={80}
-                        onChange={(event) => setActor(event.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Review reason
-                      <input
-                        value={reason}
-                        maxLength={500}
-                        onChange={(event) => setReason(event.target.value)}
-                      />
-                    </label>
+              <div className="review-panel">
+                <h3>
+                  <WorkbenchIcon name="shield" /> Internal action drafts
+                </h3>
+                {selected.drafts.map((draft, index) => (
+                  <div className="draft" key={index}>
+                    <strong>{draft.type.replaceAll("_", " ")}</strong>
+                    <span>
+                      {draft.quantity !== undefined
+                        ? `${draft.quantity} units · ${draft.warehouse}`
+                        : `ETA ${draft.eta_minutes} min`}{" "}
+                      · {draft.status}
+                    </span>
                   </div>
-                  <div className="toolbar">
-                    <button
-                      className="primary"
-                      disabled={task.busy || !actor.trim() || !selected.drafts.length}
-                      onClick={() => review("approved")}
-                    >
-                      Approve internal drafts
-                    </button>
-                    <button
-                      disabled={task.busy || !actor.trim() || !reason.trim()}
-                      onClick={() => review("dismissed")}
-                    >
-                      Dismiss with reason
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p className="notice" role="status">
-                  Case {selected.status}. This review is final.
+                ))}
+                {!selected.drafts.length && (
+                  <p className="muted">No action draft is required for this case.</p>
+                )}
+                <p className="muted">
+                  Approval records a local draft only. No supplier order or customer message is
+                  sent. Reviewer labels are not authenticated accounts.
                 </p>
-              )}
-              <h3>Audit trail</h3>
+                {selected.status === "open" ? (
+                  <>
+                    <div className="toolbar">
+                      <label>
+                        Reviewer label
+                        <input
+                          value={actor}
+                          maxLength={80}
+                          onChange={(event) => setActor(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Review reason
+                        <input
+                          value={reason}
+                          maxLength={500}
+                          onChange={(event) => setReason(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div className="toolbar">
+                      <button
+                        className="primary"
+                        disabled={task.busy || !actor.trim() || !selected.drafts.length}
+                        onClick={() => review("approved")}
+                      >
+                        Approve internal drafts
+                      </button>
+                      <button
+                        disabled={task.busy || !actor.trim() || !reason.trim()}
+                        onClick={() => review("dismissed")}
+                      >
+                        Dismiss with reason
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="notice" role="status">
+                    Case {selected.status}. This review is final.
+                  </p>
+                )}
+              </div>
+              <h3 className="audit-heading">
+                <WorkbenchIcon name="clock" /> Audit trail
+              </h3>
               <ol className="timeline">
                 {selected.audit.map((event, index) => (
                   <li key={index}>

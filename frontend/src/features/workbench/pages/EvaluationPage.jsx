@@ -6,6 +6,8 @@ import { EvaluationInterpretation } from "../components/EvaluationInterpretation
 import { ExportButtons } from "../components/ExportButtons.jsx";
 import { useRemote, useTask } from "../hooks/useRemote.js";
 import { ResearchBenchmarkPage } from "./ResearchBenchmarkPage.jsx";
+import { PageIntro, PanelHeading, MetricCard } from "../components/WorkspacePrimitives.jsx";
+import { WorkbenchIcon } from "../components/WorkbenchIcon.jsx";
 
 export function EvaluationPage({ imports, version, refresh, initialMode = "operational" }) {
   const [mode, setMode] = useState(initialMode);
@@ -34,24 +36,26 @@ export function EvaluationPage({ imports, version, refresh, initialMode = "opera
     if (result) refresh();
   }
   return (
-    <section>
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">04 / Evidence, independently measured</p>
-          <h1>Model evaluation</h1>
-          <p className="muted">
-            {mode === "research"
-              ? "Saved, separate ETA research evidence. Serving models remain unchanged."
-              : "Fresh temporary models. Held-out outcomes. Serving models remain unchanged."}
-          </p>
-        </div>
-        <span className="mode-label">LightGBM only</span>
-      </div>
-      <div className="toolbar" role="group" aria-label="Evaluation area">
+    <section className="evaluation-page">
+      <PageIntro
+        eyebrow="04 / Evidence, independently measured"
+        title="Model evaluation"
+        description={
+          mode === "research"
+            ? "Saved, separate ETA research evidence. Serving models remain unchanged."
+            : "Go beyond a single score. Compare held-out outcomes, baselines and model behaviour."
+        }
+        icon="evaluation"
+        mode="LightGBM only"
+        context="Independent evaluation. No automatic model promotion."
+      />
+      <div className="toolbar evaluation-tabs" role="group" aria-label="Evaluation area">
         <button aria-pressed={mode === "operational"} onClick={() => setMode("operational")}>
+          <WorkbenchIcon name="target" />
           Operational evaluation
         </button>
         <button aria-pressed={mode === "research"} onClick={() => setMode("research")}>
+          <WorkbenchIcon name="experiment" />
           ETA research benchmark
         </button>
       </div>
@@ -59,23 +63,31 @@ export function EvaluationPage({ imports, version, refresh, initialMode = "opera
         <ResearchBenchmarkPage />
       ) : (
         <>
-          <div className="surface">
-            <SourcePicker
-              imports={imports}
-              kind={kind}
-              setKind={setKind}
-              selected={selected}
-              setSelected={setImportId}
+          <div className="surface evaluation-setup">
+            <PanelHeading
+              icon="target"
+              eyebrow="Evaluation setup"
+              title="Configure your evaluation"
+              description="Fresh temporary models and held-out outcomes. Serving models remain unchanged."
             />
-            <div className="toolbar">
-              <button
-                className="primary"
-                disabled={task.busy || running || !selected}
-                onClick={evaluate}
-              >
-                {running ? "Evaluation running…" : "Run held-out evaluation"}
-              </button>
-              <button onClick={refresh}>Refresh reports</button>
+            <div className="evaluation-configuration">
+              <SourcePicker
+                imports={imports}
+                kind={kind}
+                setKind={setKind}
+                selected={selected}
+                setSelected={setImportId}
+              />
+              <div className="toolbar evaluation-actions">
+                <button
+                  className="primary"
+                  disabled={task.busy || running || !selected}
+                  onClick={evaluate}
+                >
+                  {running ? "Evaluation running…" : "Run held-out evaluation"}
+                </button>
+                <button onClick={refresh}>Refresh reports</button>
+              </div>
             </div>
             <p className="muted">
               Evaluates the entire import across three windows. This can take a few minutes. Jobs
@@ -97,11 +109,13 @@ export function EvaluationPage({ imports, version, refresh, initialMode = "opera
           </div>
           {report && current ? (
             <>
-              <div className="section-heading">
-                <div>
-                  <h2>Held-out results</h2>
-                  <p className="muted">{report.protocol}</p>
-                </div>
+              <div className="section-heading evaluation-results-heading">
+                <PanelHeading
+                  icon="evaluation"
+                  eyebrow="Observed outcomes / test set"
+                  title="Held-out results"
+                  description={report.protocol}
+                />
                 <label>
                   Test window
                   <select
@@ -122,25 +136,22 @@ export function EvaluationPage({ imports, version, refresh, initialMode = "opera
                 </p>
               ))}
               <div className="metrics evaluation-metrics">
-                <div>
-                  <span>{kind === "inventory" ? "Demand MAE" : "ETA MAE"}</span>
-                  <strong>
-                    {current.regression.mae.toFixed(3)}
-                    <small> {kind === "inventory" ? "units" : "min"}</small>
-                  </strong>
-                </div>
-                <div>
-                  <span>Risk precision</span>
-                  <strong>{(current.classification.metrics.precision * 100).toFixed(1)}%</strong>
-                </div>
-                <div>
-                  <span>Risk recall</span>
-                  <strong>{(current.classification.metrics.recall * 100).toFixed(1)}%</strong>
-                </div>
-                <div>
-                  <span>Risk F1</span>
-                  <strong>{current.classification.metrics.f1.toFixed(3)}</strong>
-                </div>
+                <MetricCard
+                  icon={kind === "inventory" ? "package" : "clock"}
+                  label={kind === "inventory" ? "Demand MAE" : "ETA MAE"}
+                >
+                  {current.regression.mae.toFixed(3)}
+                  <small> {kind === "inventory" ? "units" : "min"}</small>
+                </MetricCard>
+                <MetricCard icon="target" label="Risk precision" tone="blue">
+                  {(current.classification.metrics.precision * 100).toFixed(1)}%
+                </MetricCard>
+                <MetricCard icon="alert" label="Risk recall" tone="amber">
+                  {(current.classification.metrics.recall * 100).toFixed(1)}%
+                </MetricCard>
+                <MetricCard icon="evaluation" label="Risk F1" tone="violet">
+                  {current.classification.metrics.f1.toFixed(3)}
+                </MetricCard>
               </div>
               <p className="provenance">
                 Train {current.counts.train.toLocaleString()} · validation{" "}
@@ -152,6 +163,12 @@ export function EvaluationPage({ imports, version, refresh, initialMode = "opera
               <ExportButtons
                 path={`/evaluations/${completed.evaluation_id}`}
                 filename={`evaluation-${completed.evaluation_id}`}
+              />
+              <PanelHeading
+                icon="evaluation"
+                eyebrow="Read the evidence"
+                title="Model behaviour, visualized"
+                description="Inspect predictions, classification errors and probability quality together."
               />
               <div className="chart-grid">
                 <EvidencePlot

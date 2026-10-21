@@ -114,9 +114,9 @@ export function ReplayEvents({ events, openCases, context = "replay" }) {
         </p>
       ) : (
         <>
-          <ol className="timeline" aria-label={`${label} events`}>
+          <ol className="timeline event-grid" aria-label={`${label} events`}>
             {visible.map((event) => (
-              <li key={event.position}>
+              <li key={event.position} data-priority={event.priority}>
                 <div className="replay-event-heading">
                   <strong
                     className={
